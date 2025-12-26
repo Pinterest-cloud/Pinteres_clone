@@ -13,7 +13,7 @@
         <div style="color:#e60023; font-size:28px;"><i class="fab fa-pinterest"></i></div>
         <div class="search-bar">
             <i class="fa fa-search"></i>
-            <input type="text" id="inpSearch" placeholder="Cari (Gunung, Kucing, Muka)...">
+            <input type="text" id="inpSearch" placeholder="Cari foto apa saja...">
         </div>
         <div onclick="showPage('profile')"><div class="pfp-nav pfp-sync"></div></div>
     </nav>
@@ -29,19 +29,19 @@
                 <img id="up-prev" style="display:none; width:100%; border-radius:10px;">
                 <input type="file" id="file-up" hidden accept="image/*">
             </div>
-            <button class="btn-red" style="margin-top:20px;" onclick="handleUpload()">Terbitkan</button>
+            <button class="btn-red" style="margin-top:20px;" onclick="handleUpload()">Terbitkan Pin</button>
         </div>
     </div>
 
     <div id="profile-page" class="page">
         <div class="profile-header">
             <div id="pfp-big"></div>
-            <h2 id="display-name" style="margin: 10px 0;">Wak User</h2>
-            <button class="btn-edit" onclick="changeName()">Ganti Nama</button>
+            <h2 id="display-name">User Name</h2>
+            <button class="btn-edit" onclick="changeName()">Edit Nama</button>
             <button class="btn-edit" onclick="document.getElementById('pfp-inp').click()">Ganti Foto</button>
             <input type="file" id="pfp-inp" hidden accept="image/*">
         </div>
-        <div class="pin-container" id="profile-grid" style="margin-top:20px;"></div>
+        <div class="pin-container" id="profile-grid"></div>
     </div>
 
     <div class="toolbar">
@@ -55,117 +55,102 @@
             <img id="modal-img" src="">
             <div class="modal-info">
                 <h3>Detail Pin</h3>
-                <div class="komentar-box" id="list-komentar">
-                    <p id="no-kom" style="color:#999">Belum ada komentar...</p>
-                </div>
-                <div class="input-group">
-                    <input type="text" id="input-kom" placeholder="Tulis komentar...">
-                    <button class="btn-send" onclick="addKomentar()"><i class="fa fa-paper-plane"></i></button>
-                </div>
-                <a id="btn-dl" href="#" download class="btn-red" style="background:#efefef; color:#333;">Simpan Gambar</a>
+                <div class="komentar-box" id="list-komentar"></div>
+                <button class="btn-red" onclick="document.getElementById('modal-box').style.display='none'">Tutup</button>
             </div>
         </div>
     </div>
 
-    <script>
-        const hGrid = document.getElementById('home-grid');
-        const pGrid = document.getElementById('profile-grid');
-        const inpSearch = document.getElementById('inpSearch');
+    <script>const hGrid = document.getElementById('home-grid');
+const pGrid = document.getElementById('profile-grid');
+const inpSearch = document.getElementById('inpSearch');
+        
+function init() {
+    const n = localStorage.getItem('wk_name') || "Wak User";
+    const p = localStorage.getItem('wk_pfp') || "https://www.w3schools.com/howto/img_avatar.png";
+    document.getElementById('display-name').innerText = n;
+    document.getElementById('pfp-big').style.backgroundImage = `url(${p})`;
+    document.querySelectorAll('.pfp-sync').forEach(el => el.style.backgroundImage = `url(${p})`);
+    renderProfile();
+    loadRandomHome();
+}
 
-        function init() {
-            const n = localStorage.getItem('wk_name') || "Wak User";
-            const p = localStorage.getItem('wk_pfp') || "https://www.w3schools.com/howto/img_avatar.png";
-            document.getElementById('display-name').innerText = n;
-            document.getElementById('pfp-big').style.backgroundImage = `url(${p})`;
-            document.querySelectorAll('.pfp-sync').forEach(el => el.style.backgroundImage = `url(${p})`);
-            renderProfile();
+function changeName() {
+    const n = prompt("Masukkan nama baru:");
+    if(n) { localStorage.setItem('wk_name', n); init(); }
+}
+
+document.getElementById('pfp-inp').onchange = (e) => {
+    const fr = new FileReader();
+    fr.onload = (v) => { localStorage.setItem('wk_pfp', v.target.result); init(); };
+    fr.readAsDataURL(e.target.files[0]);
+};
+
+function createCard(url) {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = `<img src="${url}" loading="lazy" onerror="this.src='https://picsum.photos/400/600'">`;
+    d.onclick = () => {
+        document.getElementById('modal-box').style.display = 'flex';
+        document.getElementById('modal-img').src = url;
+    };
+    return d;
+}
+
+function loadRandomHome() {
+    hGrid.innerHTML = "";
+    for(let i=0; i<30; i++) {
+        hGrid.appendChild(createCard(`https://picsum.photos/400/${300+i}?random=${Math.random()}`));
+    }
+}
+
+inpSearch.onkeypress = (e) => {
+    if(e.key === 'Enter') {
+        const q = inpSearch.value;
+        if(!q) return;
+        hGrid.innerHTML = "";
+        for(let i=0; i<40; i++) {
+            const url = `https://images.unsplash.com/photo-1?auto=format&fit=crop&w=400&q=80&keywords=${encodeURIComponent(q)}&sig=${Math.random()+i}`;
+            hGrid.appendChild(createCard(url));
         }
+        showPage('home');
+    }
+};
 
-        function changeName() {
-            const n = prompt("Nama baru:");
-            if(n) { localStorage.setItem('wk_name', n); init(); }
-        }
+document.getElementById('file-up').onchange = (e) => {
+    const fr = new FileReader();
+    fr.onload = (v) => {
+        document.getElementById('up-prev').src = v.target.result;
+        document.getElementById('up-prev').style.display = 'block';
+        document.getElementById('up-text').style.display = 'none';
+    };
+    fr.readAsDataURL(e.target.files[0]);
+};
 
-        document.getElementById('pfp-inp').onchange = (e) => {
-            const fr = new FileReader();
-            fr.onload = (v) => { localStorage.setItem('wk_pfp', v.target.result); init(); };
-            fr.readAsDataURL(e.target.files[0]);
-        };
+function handleUpload() {
+    const src = document.getElementById('up-prev').src;
+    if(!src) return alert("Pilih foto!");
+    const pins = JSON.parse(localStorage.getItem('wk_pins') || "[]");
+    pins.unshift(src);
+    localStorage.setItem('wk_pins', JSON.stringify(pins));
+    renderProfile();
+    showPage('profile');
+}
 
-        function createCard(url) {
-            const d = document.createElement('div');
-            d.className = 'card';
-            d.innerHTML = `<img src="${url}" loading="lazy" onerror="this.src='https://picsum.photos/400/600'">`;
-            d.onclick = () => {
-                document.getElementById('modal-box').style.display = 'flex';
-                document.getElementById('modal-img').src = url;
-                document.getElementById('btn-dl').href = url;
-                document.getElementById('list-komentar').innerHTML = '<p id="no-kom" style="color:#999">Belum ada komentar...</p>';
-            };
-            return d;
-        }
+function renderProfile() {
+    const pins = JSON.parse(localStorage.getItem('wk_pins') || "[]");
+    pGrid.innerHTML = "";
+    pins.forEach(u => pGrid.appendChild(createCard(u)));
+}
 
-        function addKomentar() {
-            const inp = document.getElementById('input-kom');
-            const list = document.getElementById('list-komentar');
-            if(!inp.value.trim()) return;
-            const noKom = document.getElementById('no-kom');
-            if(noKom) noKom.remove();
-            const p = document.createElement('p');
-            p.style.marginBottom = "8px";
-            p.innerHTML = `<b>Kamu:</b> ${inp.value}`;
-            list.prepend(p);
-            inp.value = "";
-        }
+function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id + '-page').classList.add('active');
+    window.scrollTo(0,0);
+}
 
-        inpSearch.onkeypress = (e) => {
-            if(e.key === 'Enter') {
-                const q = inpSearch.value;
-                if(!q) return;
-                hGrid.innerHTML = "";
-                for(let i=0; i<40; i++) {
-                    const url = `https://images.unsplash.com/photo-1?auto=format&fit=crop&w=400&q=80&keywords=${encodeURIComponent(q)}&sig=${Math.random()+i}`;
-                    hGrid.appendChild(createCard(url));
-                }
-                showPage('home');
-            }
-        };
-
-        document.getElementById('file-up').onchange = (e) => {
-            const fr = new FileReader();
-            fr.onload = (v) => {
-                document.getElementById('up-prev').src = v.target.result;
-                document.getElementById('up-prev').style.display = 'block';
-                document.getElementById('up-text').style.display = 'none';
-            };
-            fr.readAsDataURL(e.target.files[0]);
-        };
-
-        function handleUpload() {
-            const src = document.getElementById('up-prev').src;
-            if(!src) return alert("Pilih foto!");
-            const pins = JSON.parse(localStorage.getItem('wk_pins') || "[]");
-            pins.unshift(src);
-            localStorage.setItem('wk_pins', JSON.stringify(pins));
-            renderProfile();
-            showPage('profile');
-        }
-
-        function renderProfile() {
-            const pins = JSON.parse(localStorage.getItem('wk_pins') || "[]");
-            pGrid.innerHTML = "";
-            pins.forEach(u => pGrid.appendChild(createCard(u)));
-        }
-
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id + '-page').classList.add('active');
-            window.scrollTo(0,0);
-        }
-
-        init();
-        for(let i=0; i<30; i++) hGrid.appendChild(createCard(`https://picsum.photos/400/${300+i}?random=${i}`));
-        window.onclick = (e) => { if(e.target.id == 'modal-box') e.target.style.display = 'none'; };
+init();
+window.onclick = (e) => { if(e.target.id == 'modal-box') e.target.style.display = 'none'; };
     </script>
 </body>
 </html>
