@@ -23,7 +23,7 @@
             }
         }
 
-        * { 
+        {  
             margin: 0; 
             padding: 0; 
             box-sizing: border-box; 
@@ -37,8 +37,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- HALAMAN LOGIN --- */
-        #auth-page { 
+        auth-page { 
             position: fixed; inset: 0; background: var(--bg); 
             z-index: 9999; display: flex; align-items: center; 
             justify-content: center; padding: 30px; 
@@ -268,7 +267,6 @@
             return div;
         }
 
-        // --- FITUR LIKE & DOWNLOAD ---
         function downloadImg() {
             const link = document.createElement('a');
             link.href = currentImg;
