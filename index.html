@@ -1,39 +1,253 @@
-<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pinterest Clone</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <nav class="navbar">
-        <div style="color:#e60023; font-size:28px;"><i class="fab fa-pinterest"></i></div>
-        <div class="search-bar">
-            <i class="fa fa-search"></i>
-            <input type="text" id="inpSearch" placeholder="Cari foto apa saja...">
+    <div id="auth-page">
+        <div class="auth-card">
+            <i class="fab fa-pinterest auth-logo"></i>
+            <h2 style="margin-bottom: 20px;">Masuk</h2>
+            <input type="email" id="auth-email" class="auth-input" placeholder="Email">
+            <input type="password" id="auth-pass" class="auth-input" placeholder="Password">
+            <input type="text" id="auth-user" class="auth-input" placeholder="Nama Lengkap">
+            <button class="btn-red" style="width: 100%;" onclick="handleAuth()">Lanjutkan</button>
+            <div style="margin: 15px; font-size: 12px; color: var(--subtext);">ATAU</div>
+            <button style="width: 100%; padding: 10px; border-radius: 20px; border: 1px solid var(--gray); background: var(--bg); color: var(--text); font-weight: 600; cursor: pointer;" onclick="handleAuth('Google User')">
+                <img src="https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg" width="14"> Google
+            </button>
         </div>
-        <div onclick="showPage('profile')"><div class="pfp-nav pfp-sync"></div></div>
+    </div>
+
+    <nav class="navbar" id="main-nav">
+        <div style="color:var(--accent); font-size:24px;"><i class="fab fa-pinterest"></i></div>
+        <div class="search-bar">
+            <i class="fa fa-search" style="color: var(--subtext);"></i>
+            <input type="text" placeholder="Cari inspirasi...">
+        </div>
     </nav>
 
-    <main id="home-page" class="page active">
-        <div class="pin-container" id="home-grid"></div>
-    </main>
-
+    <main id="home-page" class="page active"><div class="pin-container" id="home-grid"></div></main>
+    
     <div id="upload-page" class="page">
-        <div style="max-width: 400px; margin: auto; padding: 20px; text-align: center;">
-            <div style="border: 2px dashed #ccc; padding: 40px; border-radius: 20px;" onclick="document.getElementById('file-up').click()">
-                <p id="up-text">Klik untuk upload</p>
-                <img id="up-prev" style="display:none; width:100%; border-radius:10px;">
+        <div style="max-width: 350px; margin: auto; padding: 20px; text-align: center;">
+            <div style="border: 2px dashed var(--gray); padding: 50px; border-radius: 20px; cursor: pointer;" onclick="document.getElementById('file-up').click()">
+                <i class="fa fa-cloud-upload-alt" style="font-size: 40px; color: var(--gray);"></i>
+                <img id="up-prev" style="display:none; width:100%; border-radius:12px;">
                 <input type="file" id="file-up" hidden accept="image/*">
             </div>
-            <button class="btn-red" style="margin-top:20px;" onclick="handleUpload()">Terbitkan Pin</button>
+            <button class="btn-red" style="width: 100%; margin-top: 20px;" onclick="handleUpload()">Upload Pin</button>
         </div>
     </div>
 
     <div id="profile-page" class="page">
+        <div style="text-align: center; padding: 20px;">
+            <div class="pfp-sync" style="width: 100px; height: 100px; margin: 0 auto 10px; cursor: pointer;" onclick="document.getElementById('pfp-change').click()"></div>
+            <input type="file" id="pfp-change" hidden accept="image/*">
+            <h2 id="display-name">User</h2>
+            <button style="margin-top: 10px; background: none; border: 1px solid var(--gray); color: var(--text); padding: 5px 15px; border-radius: 20px; font-size: 12px;" onclick="logout()">Keluar</button>
+            <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; font-weight: 600;">
+                <span onclick="switchTab('pins')" id="tab-pins" style="cursor:pointer;" class="active-tab">Dibuat</span>
+                <span onclick="switchTab('saved')" id="tab-saved" style="cursor:pointer; color: var(--subtext);">Disimpan</span>
+            </div>
+        </div>
+        <div class="pin-container" id="profile-grid"></div>
+    </div>
+
+    <div class="toolbar" id="main-toolbar">
+        <i class="fa fa-home active" id="ic-home" onclick="showPage('home')"></i>
+        <i class="fa fa-plus-circle" id="ic-upload" onclick="showPage('upload')"></i>
+        <div class="pfp-nav pfp-sync" id="ic-profile" onclick="showPage('profile')"></div>
+    </div>
+
+    <div id="modal-box" class="modal">
+        <div class="modal-content">
+            <img id="modal-img" src="">
+            <div class="modal-body">
+                <div class="actions">
+                    <div style="display: flex; gap: 20px;">
+                        <i class="fa fa-heart icon-btn" id="like-btn" onclick="toggleLike()"></i>
+                        <i class="fa fa-download icon-btn" onclick="downloadImg()"></i>
+                    </div>
+                    <button class="btn-red" onclick="savePin()">Simpan</button>
+                </div>
+                <div class="comment-section" id="comment-list"></div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="pfp-sync" style="width: 25px; height: 25px;"></div>
+                    <input type="text" id="input-comm" style="flex:1; padding: 10px; border-radius: 20px; border: 1px solid var(--gray); background: var(--gray); color: var(--text); outline: none;" placeholder="Komentar...">
+                    <i class="fa fa-paper-plane" onclick="sendComment()" style="color: var(--accent);"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentImg = "";
+        let currentTab = "pins";
+
+        function handleAuth(name = null) {
+            const user = name || document.getElementById('auth-user').value;
+            if(!user) return alert("Isi data dulu!");
+            localStorage.setItem('pin_logged', 'true');
+            localStorage.setItem('pin_name', user);
+            if(!localStorage.getItem('pin_pfp')) localStorage.setItem('pin_pfp', 'https://i.pravatar.cc/150?u='+user);
+            init();
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+
+        function init() {
+            if(localStorage.getItem('pin_logged') !== 'true') return;
+            document.getElementById('auth-page').style.display = 'none';
+            document.getElementById('main-nav').style.display = 'flex';
+            document.getElementById('main-toolbar').style.display = 'flex';
+            document.getElementById('display-name').innerText = localStorage.getItem('pin_name');
+            updatePFP();
+            renderHome();
+            renderProfile();
+        }
+
+        function updatePFP() {
+            const pfp = localStorage.getItem('pin_pfp');
+            document.querySelectorAll('.pfp-sync').forEach(el => el.style.backgroundImage = `url(${pfp})`);
+        }
+
+        function renderHome() {
+            const grid = document.getElementById('home-grid');
+            grid.innerHTML = "";
+            for(let i=0; i<30; i++) {
+                const url = `https://picsum.photos/400/${400 + (i%5)*50}?random=${i}`;
+                grid.appendChild(createCard(url));
+            }
+        }
+
+        function createCard(url) {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `<img src="${url}" loading="lazy">`;
+            div.onclick = () => {
+                currentImg = url;
+                document.getElementById('modal-box').style.display = 'flex';
+                document.getElementById('modal-img').src = url;
+                checkLikeStatus();
+                loadComments();
+            };
+            return div;
+        }
+
+        function downloadImg() {
+            const a = document.createElement('a');
+            a.href = currentImg;
+            a.download = 'pinterest-style-image.jpg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            alert("Gambar sedang diunduh...");
+        }
+
+        function toggleLike() {
+            let likes = JSON.parse(localStorage.getItem('pin_likes') || "[]");
+            const btn = document.getElementById('like-btn');
+            if(likes.includes(currentImg)) {
+                likes = likes.filter(l => l !== currentImg);
+                btn.classList.remove('liked', 'fas');
+                btn.classList.add('far');
+            } else {
+                likes.push(currentImg);
+                btn.classList.add('liked', 'fas');
+                btn.classList.remove('far');
+            }
+            localStorage.setItem('pin_likes', JSON.stringify(likes));
+        }
+
+        function checkLikeStatus() {
+            let likes = JSON.parse(localStorage.getItem('pin_likes') || "[]");
+            const btn = document.getElementById('like-btn');
+            if(likes.includes(currentImg)) {
+                btn.classList.add('liked', 'fas');
+                btn.classList.remove('far');
+            } else {
+                btn.classList.remove('liked', 'fas');
+                btn.classList.add('far');
+            }
+        }
+
+        function sendComment() {
+            const inp = document.getElementById('input-comm');
+            if(!inp.value) return;
+            let comms = JSON.parse(localStorage.getItem('pin_comments') || "[]");
+            comms.push({ img: currentImg, user: localStorage.getItem('pin_name'), pfp: localStorage.getItem('pin_pfp'), text: inp.value });
+            localStorage.setItem('pin_comments', JSON.stringify(comms));
+            inp.value = ""; loadComments();
+        }
+
+        function loadComments() {
+            const list = document.getElementById('comment-list');
+            list.innerHTML = "";
+            let comms = JSON.parse(localStorage.getItem('pin_comments') || "[]");
+            comms.filter(c => c.img === currentImg).forEach(c => {
+                const d = document.createElement('div');
+                d.className = 'comment-item';
+                d.innerHTML = `<div class="pfp-sync" style="background-image:url(${c.pfp}); width:25px; height:25px;"></div><div><b>${c.user}</b> ${c.text}</div>`;
+                list.appendChild(d);
+            });
+        }
+
+        document.getElementById('pfp-change').onchange = (e) => {
+            const fr = new FileReader();
+            fr.onload = (v) => { localStorage.setItem('pin_pfp', v.target.result); updatePFP(); };
+            fr.readAsDataURL(e.target.files[0]);
+        };
+
+        document.getElementById('file-up').onchange = (e) => {
+            const fr = new FileReader();
+            fr.onload = (v) => { document.getElementById('up-prev').src = v.target.result; document.getElementById('up-prev').style.display = 'block'; };
+            fr.readAsDataURL(e.target.files[0]);
+        };
+
+        function handleUpload() {
+            const src = document.getElementById('up-prev').src;
+            let pins = JSON.parse(localStorage.getItem('pin_uploaded') || "[]");
+            pins.unshift(src); localStorage.setItem('pin_uploaded', JSON.stringify(pins));
+            location.reload();
+        }
+
+        function savePin() {
+            let saved = JSON.parse(localStorage.getItem('pin_saved') || "[]");
+            if(!saved.includes(currentImg)) { saved.unshift(currentImg); localStorage.setItem('pin_saved', JSON.stringify(saved)); alert("Tersimpan!"); }
+        }
+
+        function renderProfile() {
+            const grid = document.getElementById('profile-grid'); grid.innerHTML = "";
+            let data = (currentTab === 'pins') ? JSON.parse(localStorage.getItem('pin_uploaded') || "[]") : JSON.parse(localStorage.getItem('pin_saved') || "[]");
+            data.forEach(u => grid.appendChild(createCard(u)));
+        }
+
+        function switchTab(t) {
+            currentTab = t;
+            document.getElementById('tab-pins').style.color = (t==='pins') ? 'var(--text)' : 'var(--subtext)';
+            document.getElementById('tab-saved').style.color = (t==='saved') ? 'var(--text)' : 'var(--subtext)';
+            renderProfile();
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id + '-page').classList.add('active');
+            document.querySelectorAll('.toolbar i').forEach(i => i.classList.remove('active'));
+            if(id!=='profile') document.getElementById('ic-'+id).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        window.onclick = (e) => { if(e.target.className === 'modal') e.target.style.display = 'none'; };
+
+        init();
+    </script>
+</body>
+</html>
         <div class="profile-header">
             <div id="pfp-big"></div>
             <h2 id="display-name">User Name</h2>
