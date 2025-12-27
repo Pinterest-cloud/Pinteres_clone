@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -5,46 +6,83 @@
     <title>Pinterest Clone</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #111111; --text: #ffffff; --accent: #e60023; }
-        { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
         
-        .auth-page { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; width: 100%; position: fixed; inset: 0; z-index: 10000; background: var(--bg);
+        :root {
+            --bg: #ffffff;
+            --text: #111111;
+            --gray: #efefef;
+            --accent: #e60023;
         }
-        .auth-card { width: 90%; max-width: 320px; text-align: center; }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #111111;
+                --text: #ffffff;
+                --gray: #262626;
+            }
+        }
 
-        .main-app { display: none; }
-        .page { display: none; padding: 20px 10px 100px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); transition: 0.3s; }
+
+        #auth-page {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 10000; /* Paling depan supaya bisa dipencet */
+            background: var(--bg);
+            padding: 20px;
+        }
+        .auth-card { width: 100%; max-width: 320px; text-align: center; }
+
+        #main-app { display: none; padding-bottom: 80px; }
+        .page { display: none; padding: 15px; }
         .page.active { display: block; }
-        
+
         .pin-container { column-count: 2; column-gap: 10px; }
-        .card { break-inside: avoid; margin-bottom: 10px; border-radius: 15px; overflow: hidden; background: #222; position: relative; }
+        .card { 
+            break-inside: avoid; margin-bottom: 15px; 
+            border-radius: 16px; overflow: hidden; 
+            background: var(--gray); position: relative;
+        }
         .card img { width: 100%; display: block; }
         
-        .toolbar { 
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
-            background: #1e1e1e; display: flex; gap: 40px; padding: 15px 35px; 
-            border-radius: 50px; border: 1px solid #333; z-index: 9000;
-        }
-        .toolbar i { font-size: 22px; color: #777; cursor: pointer; }
-        .toolbar i.active { color: white; }
+        .card-info { padding: 8px; font-size: 12px; }
+        .user-tag { display: flex; align-items: center; gap: 5px; margin-top: 5px; }
+        .user-tag img { width: 20px; height: 20px; border-radius: 50%; }
 
-        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; }
-        .btn-red { width: 100%; padding: 15px; border-radius: 30px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; }
+        .toolbar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--gray); display: flex; gap: 40px; padding: 12px 35px;
+            border-radius: 50px; border: 1px solid rgba(128,128,128,0.2);
+            z-index: 5000; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .toolbar i { font-size: 22px; color: #888; cursor: pointer; }
+        .toolbar i.active { color: var(--text); }
+
+        input { 
+            width: 100%; padding: 14px; margin-bottom: 12px; 
+            border-radius: 12px; border: 1px solid var(--gray);
+            background: var(--bg); color: var(--text); font-size: 16px;
+        }
+        .btn-red { 
+            width: 100%; padding: 14px; border-radius: 30px; border: none;
+            background: var(--accent); color: white; font-weight: bold; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
     <div id="auth-page">
         <div class="auth-card">
-            <i class="fab fa-pinterest" style="color:var(--accent); font-size:60px; margin-bottom:20px;"></i>
-            <h2 style="margin-bottom:20px;">Masuk Ke Akun</h2>
+            <i class="fab fa-pinterest" style="color:var(--accent); font-size:50px; margin-bottom:20px;"></i>
+            <h2 style="margin-bottom:25px;">Daftar atau Masuk</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-red" id="btn-manual">Lanjutkan</button>
-            <p style="margin:15px 0; color:#888;">Atau</p>
-            <button class="btn-red" style="background:#4285F4;" id="btn-google">Masuk Google</button>
+            <p style="margin:20px 0; color:#888; font-size:14px;">Atau</p>
+            <button class="btn-red" style="background:#4285F4;" id="btn-google">
+                <i class="fab fa-google"></i> Masuk dengan Google
+            </button>
         </div>
     </div>
 
@@ -55,9 +93,10 @@
         </div>
 
         <div id="profile" class="page" style="text-align:center;">
-            <div id="user-pfp" style="width:80px; height:80px; border-radius:50%; background:#333; margin:20px auto; background-size:cover;"></div>
-            <h2 id="user-name">User</h2>
-            <button class="btn-red" id="btn-logout" style="background:#333; margin-top:20px;">Keluar</button>
+            <div id="user-pfp" style="width:90px; height:90px; border-radius:50%; background:#888; margin:40px auto 15px; background-size:cover;"></div>
+            <h2 id="user-name">Nama Pengguna</h2>
+            <p id="user-email" style="color:#888; font-size:14px;"></p>
+            <button id="btn-logout" style="margin-top:30px; background:none; border:none; color:var(--accent); font-weight:bold;">Keluar dari Akun</button>
         </div>
 
         <div class="toolbar">
@@ -68,7 +107,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDwKskc4ZzZqjGmSKZHbLTrAKY38VWh6L4",
@@ -82,17 +121,35 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
+        document.getElementById('btn-manual').onclick = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            if(!email || !pass) return alert("Isi email dan password!");
 
-        document.getElementById('btn-google').onclick = () => signInWithPopup(auth, provider);
+            try {
+                
+                await createUserWithEmailAndPassword(auth, email, pass);
+            } catch (err) {
+                
+                if (err.code === 'auth/email-already-in-use') {
+                    await signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Password salah!"));
+                } else {
+                    alert(err.message);
+                }
+            }
+        };
+
+   document.getElementById('btn-google').onclick = () => signInWithPopup(auth, provider);
         document.getElementById('btn-logout').onclick = () => signOut(auth).then(() => location.reload());
 
         onAuthStateChanged(auth, (user) => {
             if(user) {
                 document.getElementById('auth-page').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
-                document.getElementById('user-name').innerText = user.displayName || "User";
+                document.getElementById('user-name').innerText = user.displayName || user.email.split('@')[0];
+                document.getElementById('user-email').innerText = user.email;
                 if(user.photoURL) document.getElementById('user-pfp').style.backgroundImage = `url(${user.photoURL})`;
-                fetchImages();
+                fetchPhotos();
             } else {
                 document.getElementById('auth-page').style.display = 'flex';
                 document.getElementById('main-app').style.display = 'none';
@@ -100,23 +157,41 @@
         });
 
         document.getElementById('to-home').onclick = () => {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('home').classList.add('active');
+            showPage('home');
+            setActiveIcon('to-home');
         };
         document.getElementById('to-profile').onclick = () => {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('profile').classList.add('active');
+            showPage('profile');
+            setActiveIcon('to-profile');
         };
 
-        async function fetchImages() {
-            const res = await fetch('https://api.unsplash.com/photos/random?count=30&client_id=lzV4x5Ho_PmAkk4C6Ec6PuDyFrouDZFaTWVXRVBBb0k');
-            const data = await res.json();
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+        function setActiveIcon(id) {
+            document.querySelectorAll('.toolbar i').forEach(i => i.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        async function fetchPhotos() {
             const grid = document.getElementById('grid');
             grid.innerHTML = "";
+            const res = await fetch('https://api.unsplash.com/photos/random?count=30&client_id=lzV4x5Ho_PmAkk4C6Ec6PuDyFrouDZFaTWVXRVBBb0k');
+            const data = await res.json();
             data.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'card';
-                div.innerHTML = `<img src="${img.urls.small}">`;
+                div.innerHTML = `
+                    <img src="${img.urls.small}">
+                    <div class="card-info">
+                        <p>${img.alt_description || 'Ide Pinterest'}</p>
+                        <div class="user-tag">
+                            <img src="${img.user.profile_image.small}">
+                            <span>${img.user.name}</span>
+                        </div>
+                    </div>
+                `;
                 grid.appendChild(div);
             });
         }
