@@ -2,126 +2,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pinterest Pro Clone</title>
+    <title>Pinterest Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg: #ffffff;
-            --text: #111111;
-            --gray: #efefef;
-            --accent: #e60023;
-        }
-        @media (prefers-color-scheme: dark) {
-            :root { --bg: #000000; --text: #ffffff; --gray: #262626; }
+        :root { --bg: #ffffff; --text: #111111; --gray: #efefef; --accent: #e60023; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #000000; --text: #ffffff; --gray: #262626; } }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
+
+        #auth-page { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 20px; }
+        .auth-card { width: 100%; max-width: 320px; text-align: center; }
+        .btn-google-custom { 
+            width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #ddd; 
+            background: white; color: #555; font-weight: 600; display: flex; 
+            align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin-top: 15px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text); overflow-x: hidden; }
-
-        #auth-page {
-            position: fixed; inset: 0; z-index: 10000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: var(--bg); padding: 20px;
+        .navbar { 
+            position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg); 
+            display: flex; justify-content: space-around; padding: 8px 0 20px; 
+            border-top: 0.5px solid var(--gray); z-index: 999;
         }
-        .auth-card { width: 100%; max-width: 350px; text-align: center; }
-        .auth-card i { color: var(--accent); font-size: 50px; margin-bottom: 20px; }
-        input { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 16px; border: 1.5px solid var(--gray); background: var(--bg); color: var(--text); font-size: 16px; outline: none; }
-        .btn-red { width: 100%; padding: 14px; border-radius: 30px; border: none; background: var(--accent); color: white; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        .btn-google { background: #4285F4; margin-top: 15px; }
-
-        #main-app { display: none; padding-bottom: 80px; }
-        
-        header {
-            position: sticky; top: 0; background: var(--bg);
-            padding: 15px 20px; z-index: 1000; display: flex;
-            align-items: center; justify-content: space-between;
-        }
-        .header-title { font-size: 16px; font-weight: 700; border-bottom: 3px solid var(--text); padding-bottom: 5px; }
-
-        .pin-container { column-count: 2; column-gap: 10px; padding: 10px; }
-        .card { break-inside: avoid; margin-bottom: 15px; position: relative; }
-        .card img { width: 100%; border-radius: 16px; display: block; background: var(--gray); }
-        .card i { position: absolute; bottom: 10px; right: 10px; color: var(--text); font-size: 14px; }
-
-        .navbar {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: var(--bg); display: flex; justify-content: space-around;
-            padding: 10px 0 25px; border-top: 1px solid var(--gray); z-index: 9999;
-        }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #767676; text-decoration: none; font-size: 10px; gap: 4px; cursor: pointer; }
-        .nav-item i { font-size: 22px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #767676; font-size: 10px; gap: 4px; flex: 1; }
+        .nav-item i { font-size: 20px; }
         .nav-item.active { color: var(--text); }
 
-        .page { display: none; padding: 20px; text-align: center; }
+        header { position: sticky; top: 0; background: var(--bg); padding: 10px 15px; z-index: 100; display: flex; gap: 10px; align-items: center; }
+        .search-container { flex: 1; background: var(--gray); border-radius: 20px; padding: 8px 15px; display: flex; align-items: center; gap: 10px; }
+        .search-container input { border: none; background: transparent; color: var(--text); outline: none; width: 100%; font-size: 14px; }
+
+        .menu-list { text-align: left; padding: 10px 20px; }
+        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 0.1px solid var(--gray); font-size: 15px; cursor: pointer; }
+        .menu-item i { color: #888; font-size: 12px; }
+
+        .pin-container { column-count: 2; column-gap: 8px; padding: 8px; }
+        .card { break-inside: avoid; margin-bottom: 8px; border-radius: 12px; overflow: hidden; }
+        .card img { width: 100%; display: block; }
+        .page { display: none; }
         .page.active { display: block; }
-        .profile-img { width: 80px; height: 80px; border-radius: 50%; background: #00d084; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; }
     </style>
 </head>
 <body>
 
     <div id="auth-page">
         <div class="auth-card">
-            <i class="fab fa-pinterest"></i>
-            <h1 style="margin-bottom: 30px; font-size: 26px;">Daftar untuk melihat ide</h1>
+            <i class="fab fa-pinterest" style="color:var(--accent); font-size:45px; margin-bottom:20px;"></i>
+            <h2 style="margin-bottom:25px;">Daftar atau Masuk</h2>
             <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Kata sandi">
-            <button class="btn-red" id="btn-manual">Lanjutkan</button>
-            <p style="margin: 20px 0; color: #8e8e8e;">Atau</p>
-            <button class="btn-red btn-google" id="btn-google">
-                <i class="fab fa-google"></i> Lanjutkan dengan Google
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="handleLogin()" style="width:100%; padding:14px; border-radius:25px; border:none; background:var(--accent); color:white; font-weight:bold;">Lanjutkan</button>
+            <button class="btn-google-custom" id="btn-google">
+                <img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" width="18"> Lanjutkan dengan Google
             </button>
         </div>
     </div>
 
     <div id="main-app">
-        <header id="app-header">
-            <span class="header-title">Untuk Anda</span>
-            <i class="fa fa-pen" style="background: var(--gray); padding: 8px; border-radius: 50%; font-size: 14px;"></i>
+        <header>
+            <div class="search-container">
+                <i class="fa fa-search" style="color:gray"></i>
+                <input type="text" id="search-input" placeholder="Cari ide...">
+            </div>
+            <i class="fa fa-camera" style="font-size:18px; color:gray"></i>
         </header>
 
-        <div id="page-beranda" class="page active" style="padding: 0;">
+        <div id="page-beranda" class="page active">
             <div class="pin-container" id="grid"></div>
         </div>
 
-        <div id="page-cari" class="page">
-            <input type="text" placeholder="Cari ide..." style="border-radius: 25px;">
-            <p style="color: gray; margin-top: 20px;">Populer di Pinterest</p>
-        </div>
-
-        <div id="page-kotakmasuk" class="page">
-            <h2 style="text-align: left; margin-bottom: 20px;">Kotak Masuk</h2>
-            <img src="https://cdn-icons-png.flaticon.com/512/747/747055.png" style="width: 150px; opacity: 0.5; margin-top: 50px;">
-            <p style="margin-top: 20px; color: gray;">Pembaruan akan segera hadir.</p>
-        </div>
-
         <div id="page-disimpan" class="page">
-            <div class="profile-img" id="user-initial">M</div>
-            <h2 id="user-name" style="margin-bottom: 5px;">Nama</h2>
-            <p id="user-email" style="color: gray; font-size: 14px; margin-bottom: 20px;"></p>
-            <button id="btn-logout" class="btn-red" style="background: var(--gray); color: var(--text); width: auto; padding: 10px 20px;">Keluar</button>
+            <div style="padding:20px; display:flex; align-items:center; gap:15px; border-bottom:8px solid var(--gray)">
+                <div id="u-pfp" style="width:50px; height:50px; border-radius:50%; background:#00d084; color:white; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold">M</div>
+                <div style="text-align:left">
+                    <h3 id="u-name">User</h3>
+                    <p style="font-size:12px; color:gray">Lihat profil</p>
+                </div>
+            </div>
+            <div class="menu-list">
+                <p style="font-size:12px; color:gray; margin:15px 0 5px;">Pengaturan</p>
+                <div class="menu-item"><span>Manajemen akun</span><i class="fa fa-chevron-right"></i></div>
+                <div class="menu-item"><span>Visibilitas profil</span><i class="fa fa-chevron-right"></i></div>
+                <div class="menu-item"><span>Notifikasi</span><i class="fa fa-chevron-right"></i></div>
+                <div class="menu-item"><span>Privasi dan data</span><i class="fa fa-chevron-right"></i></div>
+                <p style="font-size:12px; color:gray; margin:20px 0 5px;">Masuk</p>
+                <div class="menu-item"><span>Tambahkan akun</span><i class="fa fa-chevron-right"></i></div>
+                <div class="menu-item" onclick="handleLogout()" style="color:var(--accent)"><span>Keluar</span><i class="fa fa-chevron-right"></i></div>
+            </div>
         </div>
 
         <nav class="navbar">
-            <div class="nav-item active" onclick="showPage('page-beranda', this)">
-                <i class="fa fa-home"></i>
-                <span>Beranda</span>
-            </div>
-            <div class="nav-item" onclick="showPage('page-cari', this)">
-                <i class="fa fa-search"></i>
-                <span>Cari</span>
-            </div>
-            <div class="nav-item">
-                <i class="fa fa-plus"></i>
-                <span>Buat</span>
-            </div>
-            <div class="nav-item" onclick="showPage('page-kotakmasuk', this)">
-                <i class="fa fa-comment-dots"></i>
-                <span>Kotak Masuk</span>
-            </div>
-            <div class="nav-item" onclick="showPage('page-disimpan', this)">
-                <i class="fa fa-user"></i>
-                <span>Disimpan</span>
-            </div>
+            <div class="nav-item active" onclick="navTo('page-beranda', this)"><i class="fa fa-home"></i><span>Beranda</span></div>
+            <div class="nav-item" onclick="navTo('page-cari', this)"><i class="fa fa-search"></i><span>Cari</span></div>
+            <div class="nav-item"><i class="fa fa-plus"></i><span>Buat</span></div>
+            <div class="nav-item"><i class="fa fa-comment-dots"></i><span>Kotak Ma...</span></div>
+            <div class="nav-item" onclick="navTo('page-disimpan', this)"><i class="fa fa-user"></i><span>Disimpan</span></div>
         </nav>
     </div>
 
@@ -141,47 +116,48 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
-        document.getElementById('btn-manual').onclick = async () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            try { await createUserWithEmailAndPassword(auth, email, pass); } 
-            catch { await signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Password salah!")); }
+
+        window.handleLogin = async () => {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            try { await createUserWithEmailAndPassword(auth, e, p); } 
+            catch { await signInWithEmailAndPassword(auth, e, p).catch(() => alert("Cek kembali akun anda")); }
         };
+
         document.getElementById('btn-google').onclick = () => signInWithPopup(auth, provider);
-        document.getElementById('btn-logout').onclick = () => signOut(auth).then(() => location.reload());
+        window.handleLogout = () => signOut(auth).then(() => location.reload());
 
         onAuthStateChanged(auth, (user) => {
             if(user) {
                 document.getElementById('auth-page').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 const name = user.displayName || user.email.split('@')[0];
-                document.getElementById('user-name').innerText = name;
-                document.getElementById('user-email').innerText = user.email;
-                document.getElementById('user-initial').innerText = name.charAt(0).toUpperCase();
-                fetchImages();
-            } else {
-                document.getElementById('auth-page').style.display = 'flex';
-                document.getElementById('main-app').style.display = 'none';
+                document.getElementById('u-name').innerText = name;
+                document.getElementById('u-pfp').innerText = name.charAt(0).toUpperCase();
+                fetchImages('random');
             }
         });
 
-        window.showPage = function(pageId, element) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            element.classList.add('active');
-             document.getElementById('app-header').style.display = (pageId === 'page-beranda') ? 'flex' : 'none';
-        }
+         document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchImages(e.target.value);
+        });
 
-        async function fetchImages() {
-            const res = await fetch('https://api.unsplash.com/photos/random?count=30&client_id=lzV4x5Ho_PmAkk4C6Ec6PuDyFrouDZFaTWVXRVBBb0k');
+        window.navTo = (id, el) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        };
+
+        async function fetchImages(query) {
+            const res = await fetch(`https://api.unsplash.com/photos/random?count=30&query=${query}&client_id=lzV4x5Ho_PmAkk4C6Ec6PuDyFrouDZFaTWVXRVBBb0k`);
             const data = await res.json();
             const grid = document.getElementById('grid');
             grid.innerHTML = "";
             data.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'card';
-                div.innerHTML = `<img src="${img.urls.small}"><i class="fa fa-ellipsis-h"></i>`;
+                div.innerHTML = `<img src="${img.urls.regular}">`;
                 grid.appendChild(div);
             });
         }
