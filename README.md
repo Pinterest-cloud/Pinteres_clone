@@ -8,7 +8,7 @@ Responsive Design: Looks great on both mobile and desktop.
 
 Interactions: Like button and commenting system.
 Opsi 2: Santai & To the Point (Bahasa Indonesia)
-🎨 My Pinterest Gallery
+🎨 My Pinterest update gallery 
 Proyek kodingan Pinterest Clone pertama saya! Isinya tempat buat cari gambar estetik.
 
 Fitur Utama:
