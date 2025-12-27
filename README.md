@@ -19,5 +19,5 @@ Opsi 3: Versi "Developer" (Singkat & Padat)
 Pinterest-Cloud Project
 Simple Pinterest clone using Unsplash API.
 
-Status: 🟢 Live on GitHub Pages.
+Status: 🟥 Live on GitHub Pages.
 Tech: HTML5, CSS3, javascript 
