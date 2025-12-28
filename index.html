@@ -6,42 +6,44 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #000000; --text: #ffffff; --gray: #262626; --accent: #e60023; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
 
         #auth-page { position: fixed; inset: 0; z-index: 10000; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 50px; }
         .bg-collage { position: absolute; top: 0; width: 100%; height: 60%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; opacity: 0.6; filter: blur(1px); }
         .bg-collage img { width: 100%; height: 150px; object-fit: cover; border-radius: 15px; }
         .auth-content { position: relative; width: 100%; padding: 0 30px; text-align: center; }
-        .btn-red { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
-        
-        .btn-google { width: 100%; background: #ffffff; color: #000000; border: none; padding: 12px; border-radius: 30px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin-top: 5px; }
-        .btn-google img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+        .auth-content h1 { font-size: 28px; margin-bottom: 30px; }
+        .auth-input { width: 100%; background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 15px 20px; border-radius: 30px; margin-bottom: 10px; font-size: 16px; outline: none; }
+        .btn-red { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 16px; margin-bottom: 10px; cursor: pointer; }
+        .btn-google { width: 100%; background: #fff; color: #000; border: none; padding: 12px; border-radius: 30px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+        .btn-google img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
 
         .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: space-around; padding: 10px 0 25px; z-index: 999; }
         .nav-item { color: #8e8e8e; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; flex: 1; }
+        .nav-item i { font-size: 22px; }
         .nav-item.active { color: #fff; }
 
+        .page { display: none; padding-bottom: 80px; }
+        .page.active { display: block; }
+        
         .header-search { position: sticky; top: 0; background: #000; padding: 10px 15px; z-index: 100; display: flex; align-items: center; gap: 10px; }
         .search-bar { flex: 1; background: var(--gray); border-radius: 25px; padding: 10px 15px; display: flex; align-items: center; gap: 10px; }
-        .search-bar input { background: transparent; border: none; color: #fff; flex: 1; outline: none; font-size: 16px; }
+        .search-bar input { background: transparent; border: none; color: #fff; flex: 1; outline: none; }
 
         .pin-container { column-count: 2; column-gap: 10px; padding: 10px; }
         .card { break-inside: avoid; margin-bottom: 10px; border-radius: 15px; overflow: hidden; background: #1a1a1a; }
         .card img { width: 100%; display: block; }
 
-        .page { display: none; padding-bottom: 80px; }
-        .page.active { display: block; }
-
-        .profile-menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #1a1a1a; cursor: pointer; }
-        .btn-edit { background: var(--gray); color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; margin-top: 10px; font-size: 13px; cursor: pointer; }
+        .profile-tabs { display: flex; justify-content: center; gap: 30px; padding: 15px 0; border-bottom: 1px solid #222; }
+        .tab-item { font-weight: bold; color: #8e8e8e; position: relative; padding-bottom: 5px; cursor: pointer; }
+        .tab-item.active { color: #fff; }
+        .tab-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #fff; border-radius: 2px; }
 
         #photo-detail { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; overflow-y: auto; }
         .action-top { padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #000; }
-        
-        .comment-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: flex-start; }
-        .comment-pfp { width: 30px; height: 30px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; }
-        .comment-text-box { background: #1a1a1a; padding: 8px 12px; border-radius: 15px; font-size: 14px; }
+        .btn-save-round { background: var(--accent); color: white; padding: 10px 25px; border-radius: 25px; border: none; font-weight: bold; }
+        .comment-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -54,10 +56,11 @@
         </div>
         <div class="auth-content">
             <i class="fab fa-pinterest" style="color:var(--accent); font-size:60px; margin-bottom:20px;"></i>
-            <h1 style="margin-bottom:30px;">Ciptakan kehidupan yang Anda sukai</h1>
-            <button class="btn-red" onclick="handleLogin()">Lanjutkan</button>
-            
-            <button class="btn-google" onclick="handleLogin()">
+            <h1>Ciptakan kehidupan yang Anda sukai</h1>
+            <input type="email" id="email-auth" class="auth-input" placeholder="Alamat email">
+            <input type="password" id="pass-auth" class="auth-input" placeholder="Kata sandi">
+            <button class="btn-red" id="btn-login-manual">Lanjutkan</button>
+            <button class="btn-google" id="btn-google-auth">
                 <img src="https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056" alt="G"> 
                 Lanjutkan dengan Google
             </button>
@@ -67,105 +70,120 @@
     <div id="photo-detail">
         <div class="action-top">
             <i class="fa fa-chevron-left" onclick="closeDetail()" style="font-size:20px; cursor:pointer;"></i>
-            <button style="background:var(--accent); color:white; padding:10px 25px; border-radius:25px; border:none; font-weight:bold;" onclick="saveToProfile()">Simpan</button>
+            <button class="btn-save-round" onclick="saveToProfile()">Simpan</button>
         </div>
         <img id="detail-img" src="" style="width:100%;">
         <div style="padding:20px;">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
-                <div id="u-pfp-detail" style="width:45px; height:45px; border-radius:50%; background:#00d084; background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; font-weight:bold;">A</div>
-                <div>
-                    <strong class="display-user-name">Admin</strong>
-                    <p style="font-size:12px; color:gray">Kreator Digital</p>
-                </div>
-                <button style="margin-left:auto; background:var(--gray); border:none; color:white; padding:10px 18px; border-radius:25px; font-weight:bold;">Ikuti</button>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                <div id="pfp-mini" style="width:35px; height:35px; border-radius:50%; background-color: #00d084; background-size:cover; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+                <strong id="name-mini">User</strong>
+                <button style="margin-left:auto; background:var(--gray); border:none; color:white; padding:8px 15px; border-radius:20px; font-weight:bold;">Ikuti</button>
             </div>
-
             <h4>Komentar</h4>
-            <div id="comments-list" style="margin: 15px 0; min-height: 20px;"></div>
-            
-            <div style="display:flex; gap:10px; align-items:center; border-top: 1px solid #222; padding-top:15px;">
-                <div id="u-pfp-comment-input" style="width:30px; height:30px; border-radius:50%; background:#00d084; background-size:cover;"></div>
-                <input type="text" id="comment-input-field" placeholder="Tambahkan komentar..." style="flex:1; background:var(--gray); border:none; padding:12px 18px; border-radius:25px; color:white; outline:none;">
-                <button onclick="sendComment()" style="background:none; border:none; color:var(--accent); font-weight:bold; cursor:pointer;">Kirim</button>
+            <div id="comments-list" style="margin: 15px 0;"></div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="comment-input" placeholder="Tambahkan komentar" style="flex:1; background:var(--gray); border:none; padding:12px 20px; border-radius:25px; color:white; outline:none;">
+                <button onclick="addComment()" style="background:none; border:none; color:var(--accent); font-weight:bold;">Kirim</button>
             </div>
         </div>
     </div>
 
-    <div id="main-app">
+    <div id="main-app" style="display:none;">
         <div id="page-beranda" class="page active">
             <header class="header-search">
                 <div class="search-bar">
                     <i class="fa fa-search"></i>
-                    <input type="text" placeholder="Cari ide..." onkeypress="handleSearch(event, 'grid-home')">
+                    <input type="text" id="search-beranda" placeholder="Cari ide..." onkeypress="handleSearch(event)">
                 </div>
             </header>
             <div class="pin-container" id="grid-home"></div>
         </div>
 
         <div id="page-cari" class="page">
-            <header class="header-search">
-                <div class="search-bar">
-                    <i class="fa fa-search"></i>
-                    <input type="text" id="search-input-cari" placeholder="Cari gambar apa saja..." onkeypress="handleSearch(event, 'grid-cari')">
-                </div>
-            </header>
+            <div style="padding:15px; font-weight:bold; font-size:20px;">Ide untuk Anda</div>
             <div class="pin-container" id="grid-cari"></div>
         </div>
 
         <div id="page-profil" class="page">
             <div style="text-align:center; padding:30px 0;">
                 <label for="pfp-upload">
-                    <div id="u-pfp-main" style="width:85px; height:85px; border-radius:50%; background:#00d084; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:30px; background-size:cover; cursor:pointer;">A</div>
+                    <div id="u-pfp-main" style="width:100px; height:100px; border-radius:50%; background:#00d084; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:bold; background-size:cover; cursor:pointer;">U</div>
                 </label>
                 <input type="file" id="pfp-upload" hidden accept="image/*" onchange="changeProfilePic(this)">
-                
-                <h2 id="u-name-display" style="margin-top:12px;">Admin</h2>
-                <button class="btn-edit" onclick="editUserName()">Edit Profil</button>
-                <p style="color:gray; font-size:12px; margin-top:10px;">0 pengikut · 0 mengikuti</p>
+                <h2 id="u-name-main" style="margin-top:15px;">User Name</h2>
+                <button onclick="logout()" style="background:none; border:none; color:gray; font-size:12px; margin-top:5px; cursor:pointer;">Keluar dari Akun</button>
             </div>
-            
-            <div style="margin-top:15px;">
-                <p style="padding:10px 20px; font-size:12px; color:gray; font-weight:bold;">Pengaturan</p>
-                <div class="profile-menu-item"><span>Manajemen akun</span><i class="fa fa-chevron-right"></i></div>
-                <div class="profile-menu-item" onclick="location.reload()"><span style="color:var(--accent); font-weight:bold;">Keluar</span><i class="fa fa-chevron-right" style="color:var(--accent)"></i></div>
+            <div class="profile-tabs">
+                <div class="tab-item active">Pin</div>
+                <div class="tab-item">Disimpan</div>
             </div>
+            <div class="pin-container" id="my-pins"></div>
         </div>
 
         <nav class="navbar">
             <div class="nav-item active" onclick="navTo('page-beranda', this)"><i class="fa fa-home"></i><span>Beranda</span></div>
             <div class="nav-item" onclick="navTo('page-cari', this)"><i class="fa fa-search"></i><span>Cari</span></div>
-            <div class="nav-item"><i class="fa fa-plus-square"></i><span>Buat</span></div>
-            <div class="nav-item"><i class="fa fa-comment-dots"></i><span>Kotak Masuk</span></div>
-            <div class="nav-item" onclick="navTo('page-profil', this)"><i class="fa fa-user-circle"></i><span>Disimpan</span></div>
+            <div class="nav-item" onclick="navTo('page-profil', this)"><i class="fa fa-user-circle"></i><span>Profil</span></div>
         </nav>
     </div>
 
-    <script>
-        let currentImg = "";
-        let globalUserName = localStorage.getItem('user_name') || "Admin";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        function handleLogin() { 
-            document.getElementById('auth-page').style.display = 'none';
-            syncUI();
-        }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDwKskc4ZzZqjGmSKZHbLTrAKY38VWh6L4",
+            authDomain: "pinterest-clone-7c535.firebaseapp.com",
+            projectId: "pinterest-clone-7c535",
+            storageBucket: "pinterest-clone-7c535.firebasestorage.app",
+            messagingSenderId: "490245029712",
+            appId: "1:490245029712:web:8a5aa487d54dcd20b8f655"
+        };
 
-        function editUserName() {
-            const newName = prompt("Masukkan nama baru kamu:", globalUserName);
-            if (newName && newName.trim() !== "") {
-                globalUserName = newName;
-                localStorage.setItem('user_name', newName);
-                syncUI();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        document.getElementById('btn-login-manual').onclick = () => {
+            const email = document.getElementById('email-auth').value;
+            const pass = document.getElementById('pass-auth').value;
+            signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Error: " + e.message));
+        };
+
+        document.getElementById('btn-google-auth').onclick = () => {
+            signInWithPopup(auth, provider).catch(e => alert(e.message));
+        };
+
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('auth-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                window.currentUser = user;
+                updateUserProfileUI(user);
+            } else {
+                document.getElementById('auth-page').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
             }
-        }
+        });
+    </script>
 
-        function syncUI() {
-            document.getElementById('u-name-display').innerText = globalUserName;
-            document.querySelectorAll('.display-user-name').forEach(el => el.innerText = globalUserName);
-            
-            const pfp = localStorage.getItem('pfp');
-            if(!pfp) {
-                document.getElementById('u-pfp-main').innerText = globalUserName[0].toUpperCase();
-                document.getElementById('u-pfp-detail').innerText = globalUserName[0].toUpperCase();
+    <script>
+        let selectedImg = "";
+
+        function updateUserProfileUI(user) {
+            const name = user.displayName || user.email.split('@')[0];
+            document.getElementById('u-name-main').innerText = name;
+            document.getElementById('name-mini').innerText = name;
+            const pfp = localStorage.getItem('pfp') || user.photoURL;
+            if(pfp) {
+                document.getElementById('u-pfp-main').style.backgroundImage = `url('${pfp}')`;
+                document.getElementById('u-pfp-main').innerText = "";
+                document.getElementById('pfp-mini').style.backgroundImage = `url('${pfp}')`;
+                document.getElementById('pfp-mini').innerText = "";
+            } else {
+                document.getElementById('u-pfp-main').innerText = name[0].toUpperCase();
             }
         }
 
@@ -174,12 +192,13 @@
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
-            if(id === 'page-beranda' && document.getElementById('grid-home').innerHTML === "") fetchImages('aesthetic', 'grid-home');
+            if(id === 'page-beranda') fetchImages('aesthetic', 'grid-home');
+            if(id === 'page-cari') fetchImages('nature', 'grid-cari');
         }
 
         async function fetchImages(query, targetId) {
             const grid = document.getElementById(targetId);
-            grid.innerHTML = "<p style='padding:20px;'>Memuat...</p>";
+            grid.innerHTML = "<p style='padding:20px'>Memuat...</p>";
             try {
                 const res = await fetch(`https://api.unsplash.com/photos/random?count=20&query=${query}&client_id=lzV4x5Ho_PmAkk4C6Ec6PuDyFrouDZFaTWVXRVBBb0k`);
                 const data = await res.json();
@@ -191,42 +210,39 @@
                     div.innerHTML = `<img src="${img.urls.small}">`;
                     grid.appendChild(div);
                 });
-            } catch (e) { grid.innerHTML = "<p>Gagal memuat.</p>"; }
+            } catch(e) { grid.innerHTML = "Gagal memuat gambar."; }
         }
 
-        function handleSearch(event, targetId) {
-            if (event.key === "Enter") fetchImages(event.target.value, targetId);
+        function handleSearch(event) {
+            if(event.key === "Enter") {
+                fetchImages(event.target.value, 'grid-home');
+            }
         }
 
         function openDetail(src) {
-            currentImg = src;
+            selectedImg = src;
             document.getElementById('photo-detail').style.display = 'flex';
             document.getElementById('detail-img').src = src;
-            syncUI(); 
-            const pfp = localStorage.getItem('pfp');
-            if(pfp) {
-                document.getElementById('u-pfp-detail').style.backgroundImage = `url('${pfp}')`;
-                document.getElementById('u-pfp-detail').innerText = "";
-                document.getElementById('u-pfp-comment-input').style.backgroundImage = `url('${pfp}')`;
-            }
         }
 
         function closeDetail() { document.getElementById('photo-detail').style.display = 'none'; }
 
-        function sendComment() {
-            const input = document.getElementById('comment-input-field');
-            const list = document.getElementById('comments-list');
-            const pfp = localStorage.getItem('pfp');
-            if (input.value.trim() !== "") {
-                const div = document.createElement('div');
-                div.className = 'comment-row';
-                div.innerHTML = `
-                    <div class="comment-pfp" style="background-image: ${pfp ? 'url('+pfp+')' : 'none'}; background-color: #00d084;">${pfp ? '' : globalUserName[0].toUpperCase()}</div>
-                    <div class="comment-text-box"><strong>${globalUserName}</strong> ${input.value}</div>
-                `;
-                list.appendChild(div);
+        function saveToProfile() {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `<img src="${selectedImg}">`;
+            document.getElementById('my-pins').prepend(div);
+            alert("Berhasil disimpan!");
+            closeDetail();
+        }
+
+        function addComment() {
+            const input = document.getElementById('comment-input');
+            if(input.value.trim() !== "") {
+                const list = document.getElementById('comments-list');
+                const name = window.currentUser.displayName || "User";
+                list.innerHTML += `<div class="comment-item"><strong>${name}</strong>: ${input.value}</div>`;
                 input.value = "";
-                list.scrollTop = list.scrollHeight;
             }
         }
 
@@ -237,14 +253,13 @@
                     const url = `url('${e.target.result}')`;
                     document.getElementById('u-pfp-main').style.backgroundImage = url;
                     document.getElementById('u-pfp-main').innerText = "";
+                    document.getElementById('pfp-mini').style.backgroundImage = url;
                     localStorage.setItem('pfp', e.target.result);
-                    syncUI();
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        syncUI();
         fetchImages('aesthetic', 'grid-home');
     </script>
 </body>
