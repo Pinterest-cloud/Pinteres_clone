@@ -16,6 +16,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+const MY_IMAGE = "https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056";
+
 onAuthStateChanged(auth, (user) => {
     const loader = document.getElementById('loader');
     const authSec = document.getElementById('auth-section');
@@ -31,10 +33,21 @@ onAuthStateChanged(auth, (user) => {
     } else {
         authSec.classList.remove('hidden');
         appContent.classList.add('hidden');
+        updateLoginIcons(); 
         createFloatingCards();
     }
     loader.style.display = 'none';
 });
+
+function updateLoginIcons() {
+    const googleBtnImg = document.querySelector('#auth-section button img');
+    if(googleBtnImg) {
+        googleBtnImg.src = MY_IMAGE;
+        googleBtnImg.classList.add('rounded-full', 'object-cover');
+        googleBtnImg.style.width = "24px";
+        googleBtnImg.style.height = "24px";
+    }
+}
 
 window.loginGoogle = () => signInWithPopup(auth, provider);
 window.loginEmail = () => {
@@ -48,9 +61,10 @@ window.logout = () => signOut(auth);
 function updateProfileUI(user) {
     document.getElementById('nav-username').innerText = user.displayName || user.email.split('@')[0];
     const avatar = document.getElementById('avatar-container');
-    avatar.innerHTML = user.photoURL 
-        ? `<img src="${user.photoURL}" class="w-full h-full object-cover">`
-        : `<div class="w-full h-full bg-red-500 text-white flex items-center justify-center font-bold text-xs">${user.email[0].toUpperCase()}</div>`;
+    
+    const finalPhoto = user.photoURL ? user.photoURL : MY_IMAGE;
+    
+    avatar.innerHTML = `<img src="${finalPhoto}" class="w-full h-full object-cover">`;
 }
 
 window.showSection = (id) => {
@@ -64,12 +78,12 @@ window.showSection = (id) => {
 function createFloatingCards() {
     const bg = document.getElementById('floating-bg');
     if(!bg) return; bg.innerHTML = '';
-    for(let i=0; i<50; i++) {
+    for(let i=0; i<15; i++) {
         const card = document.createElement('div');
         card.className = 'floating-card shadow-lg';
         card.style.left = Math.random() * 90 + '%';
         card.style.animationDelay = Math.random() * 5 + 's';
-        card.innerHTML = `<img src="https://picsum.photos/seed/fl-${i}/200/300" class="w-full h-full object-cover">`;
+        card.innerHTML = `<img src="${MY_IMAGE}" class="w-full h-full object-cover">`;
         bg.appendChild(card);
     }
 }
@@ -77,7 +91,7 @@ function createFloatingCards() {
 function populateFeed() {
     const feed = document.getElementById('feed-container');
     feed.innerHTML = '';
-    for(let i=0; i<40; i++) {
+    for(let i=0; i<20; i++) {
         const h = [250, 400, 300, 450][i % 4];
         const seed = Math.floor(Math.random() * 9999);
         const item = document.createElement('div');
@@ -111,7 +125,7 @@ window.startRealAiProcess = async () => {
 
     overlay.style.display = 'flex';
     btn.disabled = true;
-    btn.innerText = "AURA LAGI BUAT!...";
+    btn.innerText = "MENENUN AURA...";
 
     const seed = Math.floor(Math.random() * 1000000);
     const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
@@ -119,7 +133,7 @@ window.startRealAiProcess = async () => {
     resultContainer.classList.add('hidden');
     
     const img = new Image();
-    img.crossOrigin = "anonymous"; 
+    img.crossOrigin = "anonymous";
     img.src = apiUrl;
     
     img.onload = () => {
