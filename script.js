@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-// Konfigurasi Firebase Anda
 const firebaseConfig = {
     apiKey: "AIzaSyAHJKndz9GNJM5PF3-QwI6OA8oEIo2n4eg",
     authDomain: "visiaura-79db0.firebaseapp.com",
@@ -17,7 +16,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Listener Status Auth
 onAuthStateChanged(auth, (user) => {
     const loader = document.getElementById('loader');
     const authSec = document.getElementById('auth-section');
@@ -38,7 +36,6 @@ onAuthStateChanged(auth, (user) => {
     loader.style.display = 'none';
 });
 
-// Fungsi Auth
 window.loginGoogle = () => signInWithPopup(auth, provider);
 window.loginEmail = () => {
     const email = document.getElementById('email-log').value;
@@ -48,7 +45,6 @@ window.loginEmail = () => {
 };
 window.logout = () => signOut(auth);
 
-// UI Navigasi
 function updateProfileUI(user) {
     document.getElementById('nav-username').innerText = user.displayName || user.email.split('@')[0];
     const avatar = document.getElementById('avatar-container');
@@ -65,7 +61,6 @@ window.showSection = (id) => {
     lucide.createIcons();
 };
 
-// Dekorasi Background Login
 function createFloatingCards() {
     const bg = document.getElementById('floating-bg');
     if(!bg) return; bg.innerHTML = '';
@@ -79,7 +74,6 @@ function createFloatingCards() {
     }
 }
 
-// Generate Beranda (Masonry)
 function populateFeed() {
     const feed = document.getElementById('feed-container');
     feed.innerHTML = '';
@@ -98,7 +92,6 @@ function populateFeed() {
     }
 }
 
-// --- FITUR REAL AI GENERATOR ---
 window.startRealAiProcess = async () => {
     const prompt = document.getElementById('aiPrompt').value;
     const overlay = document.getElementById('loadingOverlay');
@@ -113,10 +106,8 @@ window.startRealAiProcess = async () => {
     btn.innerText = "SEDANG MEMPROSES...";
 
     const seed = Math.floor(Math.random() * 1000000);
-    // URL API Pollinations (Gratis & Real-time)
     const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=720&seed=${seed}&nologo=true&model=flux`;
 
-    // Pre-load Gambar
     const img = new Image();
     img.src = apiUrl;
     img.onload = () => {
@@ -143,7 +134,6 @@ window.saveAiResult = () => {
     link.click();
 };
 
-// --- LOGIKA CHAT GLOBAL ---
 function listenGlobalChat() {
     const q = query(collection(db, "aura_chat_v2"), orderBy("createdAt", "asc"));
     onSnapshot(q, (snap) => {
@@ -179,7 +169,6 @@ window.sendMsg = async () => {
     });
 };
 
-// Utilitas Toast
 window.showToast = (msg) => {
     const toast = document.getElementById('toast');
     document.getElementById('toastMsg').innerText = msg;
