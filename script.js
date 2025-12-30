@@ -15,8 +15,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
-
-const MY_IMAGE = "https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056";
+const GOOGLE_ICON_FIX = "https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056";
 
 onAuthStateChanged(auth, (user) => {
     const loader = document.getElementById('loader');
@@ -33,19 +32,17 @@ onAuthStateChanged(auth, (user) => {
     } else {
         authSec.classList.remove('hidden');
         appContent.classList.add('hidden');
-        updateLoginIcons(); 
+        fixGoogleBtnIcon(); 
         createFloatingCards();
     }
     loader.style.display = 'none';
 });
 
-function updateLoginIcons() {
-    const googleBtnImg = document.querySelector('#auth-section button img');
-    if(googleBtnImg) {
-        googleBtnImg.src = MY_IMAGE;
-        googleBtnImg.classList.add('rounded-full', 'object-cover');
-        googleBtnImg.style.width = "24px";
-        googleBtnImg.style.height = "24px";
+function fixGoogleBtnIcon() {
+    const btnIcon = document.querySelector('.google-btn img');
+    if(btnIcon) {
+        btnIcon.src = GOOGLE_ICON_FIX;
+        btnIcon.style.borderRadius = "50%"; 
     }
 }
 
@@ -61,10 +58,9 @@ window.logout = () => signOut(auth);
 function updateProfileUI(user) {
     document.getElementById('nav-username').innerText = user.displayName || user.email.split('@')[0];
     const avatar = document.getElementById('avatar-container');
-    
-    const finalPhoto = user.photoURL ? user.photoURL : MY_IMAGE;
-    
-    avatar.innerHTML = `<img src="${finalPhoto}" class="w-full h-full object-cover">`;
+    avatar.innerHTML = user.photoURL 
+        ? `<img src="${user.photoURL}" class="w-full h-full object-cover">`
+        : `<div class="w-full h-full bg-red-500 text-white flex items-center justify-center font-bold text-xs">${user.email[0].toUpperCase()}</div>`;
 }
 
 window.showSection = (id) => {
@@ -83,7 +79,7 @@ function createFloatingCards() {
         card.className = 'floating-card shadow-lg';
         card.style.left = Math.random() * 90 + '%';
         card.style.animationDelay = Math.random() * 5 + 's';
-        card.innerHTML = `<img src="${MY_IMAGE}" class="w-full h-full object-cover">`;
+        card.innerHTML = `<img src="https://picsum.photos/seed/fl-${i}/200/300" class="w-full h-full object-cover">`;
         bg.appendChild(card);
     }
 }
@@ -91,24 +87,14 @@ function createFloatingCards() {
 function populateFeed() {
     const feed = document.getElementById('feed-container');
     feed.innerHTML = '';
-    for(let i=0; i<20; i++) {
+    for(let i=0; i<50; i++) {
         const h = [250, 400, 300, 450][i % 4];
         const seed = Math.floor(Math.random() * 9999);
         const item = document.createElement('div');
         item.className = 'masonry-item group cursor-pointer bg-gray-200';
         
-        const aiUrl = `https://pollinations.ai/p/art-aura-${seed}?width=400&height=${h}&seed=${seed}&nologo=true`;
-        const fallbackUrl = `https://picsum.photos/seed/${seed}/400/${h}`;
-
-        item.innerHTML = `
-            <img src="${aiUrl}" 
-                 onerror="this.onerror=null; this.src='${fallbackUrl}';" 
-                 loading="lazy" 
-                 class="w-full h-auto min-h-[100px] transition-opacity duration-500">
-            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-end p-4">
-                <span class="text-white text-[10px] font-bold uppercase tracking-widest">Explore Aura</span>
-            </div>
-        `;
+        const aiUrl = `https://pollinations.ai/p/modest-fashion-style-${seed}?width=400&height=${h}&seed=${seed}&nologo=true`;
+        item.innerHTML = `<img src="${aiUrl}" loading="lazy" class="w-full h-auto min-h-[100px]">`;
         feed.appendChild(item);
     }
 }
@@ -125,32 +111,33 @@ window.startRealAiProcess = async () => {
 
     overlay.style.display = 'flex';
     btn.disabled = true;
-    btn.innerText = "MENENUN AURA...";
+    btn.innerText = "SHUTTT LAGI BUAT...";
 
-    const seed = Math.floor(Math.random() * 1000000);
+    const seed = Math.floor(Math.random() * 999999);
     const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
     resultContainer.classList.add('hidden');
     
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = apiUrl;
+    const tempImg = new Image();
+    tempImg.src = apiUrl;
     
-    img.onload = () => {
+    tempImg.onload = () => {
         resultImg.src = apiUrl;
         resultContainer.classList.remove('hidden');
         overlay.style.display = 'none';
         btn.disabled = false;
         btn.innerHTML = `<span>BUAT LAGI</span> <i data-lucide="refresh-cw" class="w-4 h-4"></i>`;
         lucide.createIcons();
-        showToast("Aura Berhasil Terwujud!");
+        showToast("Aura Berhasil Nih!");
     };
     
-    img.onerror = () => {
+    tempImg.onerror = () => {
+        const retryUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed+1}&nologo=true`;
+        resultImg.src = retryUrl;
+        resultContainer.classList.remove('hidden');
         overlay.style.display = 'none';
         btn.disabled = false;
-        btn.innerText = "COBA LAGI";
-        showToast("Koneksi sibuk, silakan klik lagi.");
+        btn.innerText = "AYO SEMANGAT";
     };
 };
 
@@ -184,7 +171,7 @@ function listenGlobalChat() {
             box.appendChild(msg);
         });
         box.scrollTop = box.scrollHeight;
-    }, (err) => console.log("Chat error:", err));
+    });
 }
 
 window.sendMsg = async () => {
@@ -199,7 +186,7 @@ window.sendMsg = async () => {
             uid: auth.currentUser.uid,
             createdAt: serverTimestamp()
         });
-    } catch(e) { showToast("Gagal mengirim pesan"); }
+    } catch(e) { console.error(e); }
 };
 
 window.showToast = (msg) => {
