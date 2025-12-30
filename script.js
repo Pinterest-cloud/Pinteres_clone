@@ -2,14 +2,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
+// Konfigurasi Firebase Anda
 const firebaseConfig = {
     apiKey: "AIzaSyAHJKndz9GNJM5PF3-QwI6OA8oEIo2n4eg",
     authDomain: "visiaura-79db0.firebaseapp.com",
     projectId: "visiaura-79db0",
     storageBucket: "visiaura-79db0.firebasestorage.app",
     messagingSenderId: "303849950518",
-    appId: "1:303849950518:web:f20967ceeb6ad5695bb797",
-    measurementId: "G-LGMPTPG0C1"
+    appId: "1:303849950518:web:f20967ceeb6ad5695bb797"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -17,6 +17,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// Listener Status Auth
 onAuthStateChanged(auth, (user) => {
     const loader = document.getElementById('loader');
     const authSec = document.getElementById('auth-section');
@@ -27,24 +28,27 @@ onAuthStateChanged(auth, (user) => {
         appContent.classList.remove('hidden');
         updateProfileUI(user);
         listenGlobalChat();
-        showToast("Halo, " + (user.displayName || "Sobat Aura") + "!");
+        populateFeed();
+        showToast("Selamat datang kembali, " + (user.displayName || "Sobat Aura"));
     } else {
         authSec.classList.remove('hidden');
         appContent.classList.add('hidden');
-        createFloatingCards(); 
+        createFloatingCards();
     }
     loader.style.display = 'none';
 });
 
-window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
+// Fungsi Auth
+window.loginGoogle = () => signInWithPopup(auth, provider);
 window.loginEmail = () => {
     const email = document.getElementById('email-log').value;
     const pass = document.getElementById('pass-log').value;
     if(!email || !pass) return;
-    signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Ops! " + e.message));
+    signInWithEmailAndPassword(auth, email, pass).catch(e => alert(e.message));
 };
 window.logout = () => signOut(auth);
 
+// UI Navigasi
 function updateProfileUI(user) {
     document.getElementById('nav-username').innerText = user.displayName || user.email.split('@')[0];
     const avatar = document.getElementById('avatar-container');
@@ -61,47 +65,87 @@ window.showSection = (id) => {
     lucide.createIcons();
 };
 
+// Dekorasi Background Login
 function createFloatingCards() {
     const bg = document.getElementById('floating-bg');
-    if(!bg) return;
-    bg.innerHTML = '';
+    if(!bg) return; bg.innerHTML = '';
     for(let i=0; i<15; i++) {
         const card = document.createElement('div');
         card.className = 'floating-card shadow-lg';
         card.style.left = Math.random() * 90 + '%';
-        card.style.animationDelay = Math.random() * 8 + 's';
-        card.style.animationDuration = (8 + Math.random() * 10) + 's';
-        card.innerHTML = `<img src="https://picsum.photos/seed/float-${i}/200/300" class="w-full h-full object-cover">`;
+        card.style.animationDelay = Math.random() * 5 + 's';
+        card.innerHTML = `<img src="https://picsum.photos/seed/fl-${i}/200/300" class="w-full h-full object-cover">`;
         bg.appendChild(card);
     }
 }
 
-const feed = document.getElementById('feed-container');
+// Generate Beranda (Masonry)
 function populateFeed() {
+    const feed = document.getElementById('feed-container');
     feed.innerHTML = '';
-    for(let i=0; i<60; i++) {
-        const heights = [200, 350, 280, 450, 310];
-        const h = heights[i % heights.length];
+    for(let i=0; i<30; i++) {
+        const h = [250, 400, 300, 450][i % 4];
+        const seed = Math.floor(Math.random() * 5000);
         const item = document.createElement('div');
-        item.className = 'masonry-item group cursor-zoom-in';
+        item.className = 'masonry-item group cursor-pointer';
         item.innerHTML = `
-            <img src="https://picsum.photos/seed/visi-${i}/400/${h}" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110">
-            <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-between p-4">
-                <div class="flex justify-end">
-                    <button class="bg-[#E60023] text-white px-4 py-2 rounded-full font-bold text-xs hover:bg-red-700 active:scale-90 transition-all">Simpan</button>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-white/20 backdrop-blur-md"></div>
-                    <span class="text-white text-[10px] font-medium">Kreator Aura #${i+1}</span>
-                </div>
+            <img src="https://pollinations.ai/p/cinematic%20aura%20art%20${seed}?width=400&height=${h}&seed=${seed}&nologo=true" loading="lazy">
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-end p-4">
+                <span class="text-white text-[10px] font-bold">Aura Inspo #${seed}</span>
             </div>
         `;
         feed.appendChild(item);
     }
 }
 
+// --- FITUR REAL AI GENERATOR ---
+window.startRealAiProcess = async () => {
+    const prompt = document.getElementById('aiPrompt').value;
+    const overlay = document.getElementById('loadingOverlay');
+    const resultContainer = document.getElementById('ai-result-container');
+    const resultImg = document.getElementById('aiResultImg');
+    const btn = document.getElementById('btnGenerate');
+
+    if(!prompt) return showToast("Tulis deskripsi auramu!");
+
+    overlay.style.display = 'flex';
+    btn.disabled = true;
+    btn.innerText = "SEDANG MEMPROSES...";
+
+    const seed = Math.floor(Math.random() * 1000000);
+    // URL API Pollinations (Gratis & Real-time)
+    const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=720&seed=${seed}&nologo=true&model=flux`;
+
+    // Pre-load Gambar
+    const img = new Image();
+    img.src = apiUrl;
+    img.onload = () => {
+        resultImg.src = apiUrl;
+        resultContainer.classList.remove('hidden');
+        overlay.style.display = 'none';
+        btn.disabled = false;
+        btn.innerHTML = `<span>BUAT LAGI</span> <i data-lucide="refresh-cw" class="w-4 h-4"></i>`;
+        lucide.createIcons();
+        showToast("Aura Berhasil Terwujud!");
+    };
+    img.onerror = () => {
+        overlay.style.display = 'none';
+        btn.disabled = false;
+        showToast("Gagal memanggil AI, coba lagi.");
+    };
+};
+
+window.saveAiResult = () => {
+    const imgUrl = document.getElementById('aiResultImg').src;
+    const link = document.createElement('a');
+    link.href = imgUrl;
+    link.download = `VisiAura-AI-${Date.now()}.png`;
+    link.click();
+};
+
+// --- LOGIKA CHAT GLOBAL ---
 function listenGlobalChat() {
-    const q = query(collection(db, "aura_chat"), orderBy("createdAt", "asc"));
+    const q = query(collection(db, "aura_chat_v2"), orderBy("createdAt", "asc"));
     onSnapshot(q, (snap) => {
         const box = document.getElementById('chat-box');
         box.innerHTML = '';
@@ -111,9 +155,9 @@ function listenGlobalChat() {
             const msg = document.createElement('div');
             msg.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
             msg.innerHTML = `
-                <div class="${isMe ? 'bg-[#E60023] text-white rounded-3xl rounded-tr-none shadow-red-100' : 'bg-white text-gray-800 rounded-3xl rounded-tl-none border border-gray-100'} p-4 max-w-[85%] shadow-sm">
-                    <p class="text-[8px] font-black uppercase opacity-60 mb-1">${d.user}</p>
-                    <p class="text-sm font-medium leading-relaxed">${d.text}</p>
+                <div class="${isMe ? 'bg-[#E60023] text-white rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none border border-gray-100'} p-3 max-w-[85%] shadow-sm">
+                    <p class="text-[8px] font-bold uppercase opacity-50 mb-1">${d.user}</p>
+                    <p class="text-sm">${d.text}</p>
                 </div>
             `;
             box.appendChild(msg);
@@ -127,7 +171,7 @@ window.sendMsg = async () => {
     const text = input.value.trim();
     if(!text) return;
     input.value = '';
-    await addDoc(collection(db, "aura_chat"), {
+    await addDoc(collection(db, "aura_chat_v2"), {
         text,
         user: auth.currentUser.displayName || auth.currentUser.email,
         uid: auth.currentUser.uid,
@@ -135,41 +179,12 @@ window.sendMsg = async () => {
     });
 };
 
-window.startAiProcess = () => {
-    const subjek = document.getElementById('aiSubjek').value;
-    const overlay = document.getElementById('loadingOverlay');
-    const text = document.getElementById('loadingText');
-
-    if(!subjek) return alert("Sebutkan subjek aura kamu!");
-
-    overlay.style.display = 'flex';
-    const steps = ["Menganalisis Aura...", "Menghubungkan Google Veo 3...", "Merender Partikel Visual...", "Hampir Selesai..."];
-    let i = 0;
-    
-    const timer = setInterval(() => {
-        text.innerText = steps[i];
-        i++;
-        if(i >= steps.length) {
-            clearInterval(timer);
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                showToast("Video Aura berhasil dibuat!");
-                showSection('home');
-            }, 1000);
-        }
-    }, 1500);
-};
-
+// Utilitas Toast
 window.showToast = (msg) => {
     const toast = document.getElementById('toast');
-    toast.querySelector('p:last-child').innerText = msg;
+    document.getElementById('toastMsg').innerText = msg;
     toast.classList.remove('toast-hidden');
-    setTimeout(() => {
-        toast.classList.add('toast-hidden');
-    }, 4000);
+    setTimeout(() => toast.classList.add('toast-hidden'), 3000);
 };
 
-window.onload = () => {
-    populateFeed();
-    lucide.createIcons();
-};
+window.onload = () => lucide.createIcons();
