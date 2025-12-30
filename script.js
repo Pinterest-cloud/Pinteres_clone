@@ -27,7 +27,7 @@ onAuthStateChanged(auth, (user) => {
         updateProfileUI(user);
         listenGlobalChat();
         populateFeed();
-        showToast("Selamat datang kembali, " + (user.displayName || "Sobat Aura"));
+        showToast("Halo, " + (user.displayName || "Sobat Aura"));
     } else {
         authSec.classList.remove('hidden');
         appContent.classList.add('hidden');
@@ -64,7 +64,7 @@ window.showSection = (id) => {
 function createFloatingCards() {
     const bg = document.getElementById('floating-bg');
     if(!bg) return; bg.innerHTML = '';
-    for(let i=0; i<15; i++) {
+    for(let i=0; i<50; i++) {
         const card = document.createElement('div');
         card.className = 'floating-card shadow-lg';
         card.style.left = Math.random() * 90 + '%';
@@ -77,15 +77,22 @@ function createFloatingCards() {
 function populateFeed() {
     const feed = document.getElementById('feed-container');
     feed.innerHTML = '';
-    for(let i=0; i<30; i++) {
+    for(let i=0; i<40; i++) {
         const h = [250, 400, 300, 450][i % 4];
-        const seed = Math.floor(Math.random() * 5000);
+        const seed = Math.floor(Math.random() * 9999);
         const item = document.createElement('div');
-        item.className = 'masonry-item group cursor-pointer';
+        item.className = 'masonry-item group cursor-pointer bg-gray-200';
+        
+        const aiUrl = `https://pollinations.ai/p/art-aura-${seed}?width=400&height=${h}&seed=${seed}&nologo=true`;
+        const fallbackUrl = `https://picsum.photos/seed/${seed}/400/${h}`;
+
         item.innerHTML = `
-            <img src="https://pollinations.ai/p/cinematic%20aura%20art%20${seed}?width=400&height=${h}&seed=${seed}&nologo=true" loading="lazy">
+            <img src="${aiUrl}" 
+                 onerror="this.onerror=null; this.src='${fallbackUrl}';" 
+                 loading="lazy" 
+                 class="w-full h-auto min-h-[100px] transition-opacity duration-500">
             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-end p-4">
-                <span class="text-white text-[10px] font-bold">Aura Inspo #${seed}</span>
+                <span class="text-white text-[10px] font-bold uppercase tracking-widest">Explore Aura</span>
             </div>
         `;
         feed.appendChild(item);
@@ -93,7 +100,8 @@ function populateFeed() {
 }
 
 window.startRealAiProcess = async () => {
-    const prompt = document.getElementById('aiPrompt').value;
+    const promptInput = document.getElementById('aiPrompt');
+    const prompt = promptInput.value.trim();
     const overlay = document.getElementById('loadingOverlay');
     const resultContainer = document.getElementById('ai-result-container');
     const resultImg = document.getElementById('aiResultImg');
@@ -103,13 +111,17 @@ window.startRealAiProcess = async () => {
 
     overlay.style.display = 'flex';
     btn.disabled = true;
-    btn.innerText = "SEDANG MEMPROSES...";
+    btn.innerText = "AURA LAGI BUAT!...";
 
     const seed = Math.floor(Math.random() * 1000000);
-    const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=720&seed=${seed}&nologo=true&model=flux`;
+    const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
+    resultContainer.classList.add('hidden');
+    
     const img = new Image();
+    img.crossOrigin = "anonymous"; 
     img.src = apiUrl;
+    
     img.onload = () => {
         resultImg.src = apiUrl;
         resultContainer.classList.remove('hidden');
@@ -119,10 +131,12 @@ window.startRealAiProcess = async () => {
         lucide.createIcons();
         showToast("Aura Berhasil Terwujud!");
     };
+    
     img.onerror = () => {
         overlay.style.display = 'none';
         btn.disabled = false;
-        showToast("Gagal memanggil AI, coba lagi.");
+        btn.innerText = "COBA LAGI";
+        showToast("Koneksi sibuk, silakan klik lagi.");
     };
 };
 
@@ -130,8 +144,11 @@ window.saveAiResult = () => {
     const imgUrl = document.getElementById('aiResultImg').src;
     const link = document.createElement('a');
     link.href = imgUrl;
-    link.download = `VisiAura-AI-${Date.now()}.png`;
+    link.target = "_blank";
+    link.download = `VisiAura-${Date.now()}.png`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
 };
 
 function listenGlobalChat() {
@@ -153,7 +170,7 @@ function listenGlobalChat() {
             box.appendChild(msg);
         });
         box.scrollTop = box.scrollHeight;
-    });
+    }, (err) => console.log("Chat error:", err));
 }
 
 window.sendMsg = async () => {
@@ -161,19 +178,25 @@ window.sendMsg = async () => {
     const text = input.value.trim();
     if(!text) return;
     input.value = '';
-    await addDoc(collection(db, "aura_chat_v2"), {
-        text,
-        user: auth.currentUser.displayName || auth.currentUser.email,
-        uid: auth.currentUser.uid,
-        createdAt: serverTimestamp()
-    });
+    try {
+        await addDoc(collection(db, "aura_chat_v2"), {
+            text,
+            user: auth.currentUser.displayName || auth.currentUser.email,
+            uid: auth.currentUser.uid,
+            createdAt: serverTimestamp()
+        });
+    } catch(e) { showToast("Gagal mengirim pesan"); }
 };
 
 window.showToast = (msg) => {
     const toast = document.getElementById('toast');
-    document.getElementById('toastMsg').innerText = msg;
+    const toastMsg = document.getElementById('toastMsg');
+    if(!toast || !toastMsg) return;
+    toastMsg.innerText = msg;
     toast.classList.remove('toast-hidden');
     setTimeout(() => toast.classList.add('toast-hidden'), 3000);
 };
 
-window.onload = () => lucide.createIcons();
+window.onload = () => {
+    lucide.createIcons();
+};
