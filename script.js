@@ -1,14 +1,27 @@
-const auraData = [
-    { id: 1, title: "Minimalist Loft", category: "minimalis", h: 300 },
-    { id: 2, title: "Neon Cyber Street", category: "cyber", h: 450 },
-    { id: 3, title: "Retro Camera Setup", category: "retro", h: 250 },
-    { id: 4, title: "Deep Forest Aura", category: "nature", h: 400 },
-    { id: 5, title: "Minimalist Desk", category: "minimalis", h: 350 },
-    { id: 6, title: "Abstract Light", category: "abstract", h: 500 },
-    { id: 7, title: "Vintage Record Player", category: "retro", h: 320 },
-    { id: 8, title: "Cyberpunk Interior", category: "cyber", h: 420 },
+const categories = ["minimalis", "cyber", "retro", "nature", "abstract", "street"];
+const titles = [
+    "Aura View", "Modern Space", "Neon City", "Vintage Mood", "Pure Nature", 
+    "Dark Aesthetic", "Urban Light", "Dreamy Concept", "Future Tech", "Artistic Soul"
 ];
 
+const generateAuraData = () => {
+    const data = [];
+    for (let i = 1; i <= 60; i++) {
+        const randomCat = categories[Math.floor(Math.random() * categories.length)];
+        const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+        const randomHeight = Math.floor(Math.random() * (500 - 250 + 1)) + 250; // Tinggi antara 250px - 500px
+        
+        data.push({
+            id: i,
+            title: `${randomTitle} ${i}`,
+            category: randomCat,
+            h: randomHeight
+        });
+    }
+    return data;
+};
+
+const auraData = generateAuraData();
 const container = document.getElementById('pinContainer');
 
 function renderAura(filter = "") {
@@ -22,9 +35,8 @@ function renderAura(filter = "") {
     if (results.length === 0) {
         container.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 100px 20px;">
-                <img src="https://cdn-icons-png.flaticon.com/512/6134/6134065.png" width="80" style="opacity: 0.2; margin-bottom: 20px;">
-                <p style="color: #94a3b8; font-weight: bold;">Oops! Aura tidak ditemukan.</p>
-                <p style="font-size: 12px; color: #cbd5e1;">Coba kata kunci lain seperti 'Minimalis' atau 'Cyber'</p>
+                <p style="color: #94a3b8; font-weight: bold; font-size: 18px;">Aura tidak ditemukan :(</p>
+                <p style="font-size: 14px; color: #cbd5e1;">Coba cari: Minimalis, Cyber, atau Nature</p>
             </div>
         `;
         return;
@@ -33,9 +45,17 @@ function renderAura(filter = "") {
     results.forEach(item => {
         const pin = document.createElement('div');
         pin.className = 'pin';
+        
         pin.innerHTML = `
-            <img src="https://picsum.photos/seed/aura-${item.id}/400/${item.h}" loading="lazy">
-            <div class="pin-label">${item.title}</div>
+            <div class="pin-image-wrapper">
+                <img src="https://picsum.photos/seed/aura-v3-${item.id}/400/${item.h}" alt="${item.title}" loading="lazy">
+                <div class="pin-overlay">
+                    <button class="btn-save">Simpan</button>
+                </div>
+            </div>
+            <div class="pin-label">
+                <span class="dot"></span> ${item.title}
+            </div>
         `;
         container.appendChild(pin);
     });
@@ -46,13 +66,10 @@ function searchAura() {
     renderAura(q);
 }
 
-
 function showSection(sectionId) {
-    
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    
     document.getElementById(sectionId).classList.add('active');
-
+    
     document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
     if(sectionId === 'dashboard') document.getElementById('nav-home').classList.add('active');
 }
@@ -68,12 +85,11 @@ function startAiProcess() {
     }
 
     overlay.style.display = 'flex';
-    
     const steps = [
-        "Menghubungkan ke Google Veo 3 Engine...",
-        "Menganalisis Prompt Aura...",
-        "Mensintesis Pixel Sinematik...",
-        "Finalisasi Render..."
+        "Menghubungkan ke Google Veo 3...",
+        "Menganalisis Aura: " + prompt.substring(0, 15) + "...",
+        "Merender Visual Sinematik...",
+        "Hampir Selesai..."
     ];
 
     let i = 0;
@@ -84,11 +100,11 @@ function startAiProcess() {
             clearInterval(interval);
             setTimeout(() => {
                 overlay.style.display = 'none';
-                alert("Berhasil! Video aura kamu telah dibuat dan disimpan ke koleksi.");
+                alert("Berhasil! Video aura kamu telah masuk ke galeri.");
                 showSection('dashboard');
             }, 1000);
         }
-    }, 1500);
+    }, 1200);
 }
 
 function sendChatMessage() {
@@ -108,12 +124,11 @@ function sendChatMessage() {
 
 function toggleModal(id) {
     const modal = document.getElementById(id);
-    const isShowing = modal.style.display === 'flex';
-    modal.style.display = isShowing ? 'none' : 'flex';
+    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
 }
 
 function handleAuth() {
-    alert("Akun Anda sedang diproses. Selamat bergabung!");
+    alert("Pendaftaran berhasil! Selamat datang di VisiAura.");
     toggleModal('authModal');
 }
 
