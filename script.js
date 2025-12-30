@@ -1,137 +1,147 @@
-const categories = ["minimalis", "cyber", "retro", "nature", "abstract", "street"];
-const titles = [
-    "Aura View", "Modern Space", "Neon City", "Vintage Mood", "Pure Nature", 
-    "Dark Aesthetic", "Urban Light", "Dreamy Concept", "Future Tech", "Artistic Soul"
-];
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-const generateAuraData = () => {
-    const data = [];
-    for (let i = 1; i <= 60; i++) {
-        const randomCat = categories[Math.floor(Math.random() * categories.length)];
-        const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-        const randomHeight = Math.floor(Math.random() * (500 - 250 + 1)) + 250; // Tinggi antara 250px - 500px
-        
-        data.push({
-            id: i,
-            title: `${randomTitle} ${i}`,
-            category: randomCat,
-            h: randomHeight
-        });
-    }
-    return data;
+const firebaseConfig = {
+    apiKey: "AIzaSyAjy-TL1OIZcWoXafKpjjGP45tfbe1B5Sc",
+    authDomain: "visiauracl-8339a.firebaseapp.com",
+    projectId: "visiauracl-8339a",
+    storageBucket: "visiauracl-8339a.firebasestorage.app",
+    messagingSenderId: "780780435918",
+    appId: "1:780780435918:web:a66a8180324903126c139f"
 };
 
-const auraData = generateAuraData();
-const container = document.getElementById('pinContainer');
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
 
-function renderAura(filter = "") {
-    container.innerHTML = "";
-    
-    const results = auraData.filter(item => 
-        item.title.toLowerCase().includes(filter.toLowerCase()) ||
-        item.category.toLowerCase().includes(filter.toLowerCase())
-    );
+onAuthStateChanged(auth, (user) => {
+    const loader = document.getElementById('loader');
+    const authSec = document.getElementById('auth-section');
+    const appContent = document.getElementById('app-content');
 
-    if (results.length === 0) {
-        container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 100px 20px;">
-                <p style="color: #94a3b8; font-weight: bold; font-size: 18px;">Aura tidak ditemukan :(</p>
-                <p style="font-size: 14px; color: #cbd5e1;">Coba cari: Minimalis, Cyber, atau Nature</p>
-            </div>
-        `;
-        return;
+    if (user) {
+        authSec.classList.add('hidden');
+        appContent.classList.remove('hidden');
+        updateProfileUI(user);
+        listenChat();
+    } else {
+        authSec.classList.remove('hidden');
+        appContent.classList.add('hidden');
     }
+    loader.style.display = 'none';
+});
 
-    results.forEach(item => {
-        const pin = document.createElement('div');
-        pin.className = 'pin';
-        
-        pin.innerHTML = `
-            <div class="pin-image-wrapper">
-                <img src="https://picsum.photos/seed/aura-v3-${item.id}/400/${item.h}" alt="${item.title}" loading="lazy">
-                <div class="pin-overlay">
-                    <button class="btn-save">Simpan</button>
-                </div>
-            </div>
-            <div class="pin-label">
-                <span class="dot"></span> ${item.title}
+window.loginGoogle = () => signInWithPopup(auth, provider);
+window.loginEmail = () => {
+    const email = document.getElementById('email-log').value;
+    const pass = document.getElementById('pass-log').value;
+    if(!email || !pass) return;
+    signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Error: " + e.message));
+};
+window.logout = () => signOut(auth);
+
+function updateProfileUI(user) {
+    document.getElementById('nav-username').innerText = user.displayName || user.email.split('@')[0];
+    const avatar = document.getElementById('avatar-container');
+    avatar.innerHTML = user.photoURL 
+        ? `<img src="${user.photoURL}" class="w-full h-full object-cover">`
+        : `<div class="w-full h-full bg-red-500 text-white flex items-center justify-center font-bold">${user.email[0].toUpperCase()}</div>`;
+}
+
+window.showSection = (sectionId) => {
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`tab-${sectionId}`).classList.remove('hidden');
+    document.querySelectorAll('.mobile-nav button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`nav-${sectionId}`).classList.add('active');
+
+    lucide.createIcons();
+};
+
+const feed = document.getElementById('feed-container');
+function populateFeed() {
+    feed.innerHTML = '';
+    for(let i=0; i<20; i++) {
+        const h = [200, 320, 260, 400][i % 4];
+        const item = document.createElement('div');
+        item.className = 'masonry-item group cursor-pointer';
+        item.innerHTML = `
+            <img src="https://picsum.photos/seed/aura-${i}/400/${h}" class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                <span class="text-white font-bold text-sm">VisiAura Inspiration #${i+1}</span>
+                <span class="text-white/60 text-[10px]">Klik untuk detail</span>
             </div>
         `;
-        container.appendChild(pin);
+        feed.appendChild(item);
+    }
+}
+
+function listenChat() {
+    const q = query(collection(db, "global_messages"), orderBy("createdAt", "asc"));
+    onSnapshot(q, (snapshot) => {
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = '';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const isMe = data.uid === auth.currentUser?.uid;
+            const msg = document.createElement('div');
+            msg.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+            msg.innerHTML = `
+                <div class="${isMe ? 'bg-[#E60023] text-white rounded-2xl rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-2xl rounded-tl-none'} p-3 max-w-[85%] text-sm shadow-sm">
+                    <p class="text-[9px] font-bold opacity-50 mb-1">${data.user}</p>
+                    <p>${data.text}</p>
+                </div>
+            `;
+            chatBox.appendChild(msg);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
     });
 }
 
-function searchAura() {
-    const q = document.getElementById('searchInput').value;
-    renderAura(q);
-}
+window.sendMsg = async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    await addDoc(collection(db, "global_messages"), {
+        text,
+        user: auth.currentUser.displayName || auth.currentUser.email,
+        uid: auth.currentUser.uid,
+        createdAt: serverTimestamp()
+    });
+};
 
-function showSection(sectionId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(sectionId).classList.add('active');
-    
-    document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
-    if(sectionId === 'dashboard') document.getElementById('nav-home').classList.add('active');
-}
-
-function startAiProcess() {
+window.startAiProcess = () => {
     const prompt = document.getElementById('aiPrompt').value;
     const overlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
+    const text = document.getElementById('loadingText');
 
-    if (!prompt) {
-        alert("Harap masukkan prompt aura!");
-        return;
-    }
+    if(!prompt) return alert("Masukkan prompt aura dulu!");
 
     overlay.style.display = 'flex';
-    const steps = [
-        "Menghubungkan ke Google Veo 3...",
-        "Menganalisis Aura: " + prompt.substring(0, 15) + "...",
-        "Merender Visual Sinematik...",
-        "Hampir Selesai..."
-    ];
-
+    const steps = ["Menganalisis Prompt...", "Memanggil VisiAura Cloud...", "Merender Partikel...", "Hampir Selesai..."];
     let i = 0;
-    const interval = setInterval(() => {
-        loadingText.innerText = steps[i];
+    
+    const timer = setInterval(() => {
+        text.innerText = steps[i];
         i++;
-        if (i >= steps.length) {
-            clearInterval(interval);
+        if(i >= steps.length) {
+            clearInterval(timer);
             setTimeout(() => {
                 overlay.style.display = 'none';
-                alert("Berhasil! Video aura kamu telah masuk ke galeri.");
-                showSection('dashboard');
+                alert("Visualisasi Aura Berhasil Dibuat!");
+                showSection('home');
             }, 1000);
         }
-    }, 1200);
-}
+    }, 1500);
+};
 
-function sendChatMessage() {
-    const input = document.getElementById('chatInput');
-    const msgBox = document.getElementById('chatMessages');
-    
-    if (!input.value) return;
-
-    const div = document.createElement('div');
-    div.className = 'msg user';
-    div.innerText = input.value;
-    
-    msgBox.appendChild(div);
-    input.value = "";
-    msgBox.scrollTop = msgBox.scrollHeight;
-}
-
-function toggleModal(id) {
-    const modal = document.getElementById(id);
-    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-}
-
-function handleAuth() {
-    alert("Pendaftaran berhasil! Selamat datang di VisiAura.");
-    toggleModal('authModal');
-}
+window.searchAura = () => {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+};
 
 window.onload = () => {
-    renderAura();
+    populateFeed();
+    lucide.createIcons();
 };
