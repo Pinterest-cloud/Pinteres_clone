@@ -4,12 +4,12 @@ import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTim
 
 const firebaseConfig = {
     apiKey: "AIzaSyAHJKndz9GNJM5PF3-QwI6OA8oEIo2n4eg",
-  authDomain: "visiaura-79db0.firebaseapp.com",
-  projectId: "visiaura-79db0",
-  storageBucket: "visiaura-79db0.firebasestorage.app",
-  messagingSenderId: "303849950518",
-  appId: "1:303849950518:web:f20967ceeb6ad5695bb797",
-  measurementId: "G-LGMPTPG0C1"
+    authDomain: "visiaura-79db0.firebaseapp.com",
+    projectId: "visiaura-79db0",
+    storageBucket: "visiaura-79db0.firebasestorage.app",
+    messagingSenderId: "303849950518",
+    appId: "1:303849950518:web:f20967ceeb6ad5695bb797",
+    measurementId: "G-LGMPTPG0C1"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -26,20 +26,22 @@ onAuthStateChanged(auth, (user) => {
         authSec.classList.add('hidden');
         appContent.classList.remove('hidden');
         updateProfileUI(user);
-        listenChat();
+        listenGlobalChat();
+        showToast("Halo, " + (user.displayName || "Sobat Aura") + "!");
     } else {
         authSec.classList.remove('hidden');
         appContent.classList.add('hidden');
+        createFloatingCards(); 
     }
     loader.style.display = 'none';
 });
 
-window.loginGoogle = () => signInWithPopup(auth, provider);
+window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
 window.loginEmail = () => {
     const email = document.getElementById('email-log').value;
     const pass = document.getElementById('pass-log').value;
     if(!email || !pass) return;
-    signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Error: " + e.message));
+    signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Ops! " + e.message));
 };
 window.logout = () => signOut(auth);
 
@@ -48,64 +50,84 @@ function updateProfileUI(user) {
     const avatar = document.getElementById('avatar-container');
     avatar.innerHTML = user.photoURL 
         ? `<img src="${user.photoURL}" class="w-full h-full object-cover">`
-        : `<div class="w-full h-full bg-red-500 text-white flex items-center justify-center font-bold">${user.email[0].toUpperCase()}</div>`;
+        : `<div class="w-full h-full bg-red-500 text-white flex items-center justify-center font-bold text-xs">${user.email[0].toUpperCase()}</div>`;
 }
 
-window.showSection = (sectionId) => {
+window.showSection = (id) => {
     document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-    document.getElementById(`tab-${sectionId}`).classList.remove('hidden');
+    document.getElementById(`tab-${id}`).classList.remove('hidden');
     document.querySelectorAll('.mobile-nav button').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(`nav-${sectionId}`).classList.add('active');
-
+    document.getElementById(`nav-${id}`).classList.add('active');
     lucide.createIcons();
 };
+
+function createFloatingCards() {
+    const bg = document.getElementById('floating-bg');
+    if(!bg) return;
+    bg.innerHTML = '';
+    for(let i=0; i<15; i++) {
+        const card = document.createElement('div');
+        card.className = 'floating-card shadow-lg';
+        card.style.left = Math.random() * 90 + '%';
+        card.style.animationDelay = Math.random() * 8 + 's';
+        card.style.animationDuration = (8 + Math.random() * 10) + 's';
+        card.innerHTML = `<img src="https://picsum.photos/seed/float-${i}/200/300" class="w-full h-full object-cover">`;
+        bg.appendChild(card);
+    }
+}
 
 const feed = document.getElementById('feed-container');
 function populateFeed() {
     feed.innerHTML = '';
-    for(let i=0; i<20; i++) {
-        const h = [200, 320, 260, 400][i % 4];
+    for(let i=0; i<60; i++) {
+        const heights = [200, 350, 280, 450, 310];
+        const h = heights[i % heights.length];
         const item = document.createElement('div');
-        item.className = 'masonry-item group cursor-pointer';
+        item.className = 'masonry-item group cursor-zoom-in';
         item.innerHTML = `
-            <img src="https://picsum.photos/seed/aura-${i}/400/${h}" class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                <span class="text-white font-bold text-sm">VisiAura Inspiration #${i+1}</span>
-                <span class="text-white/60 text-[10px]">Klik untuk detail</span>
+            <img src="https://picsum.photos/seed/visi-${i}/400/${h}" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-between p-4">
+                <div class="flex justify-end">
+                    <button class="bg-[#E60023] text-white px-4 py-2 rounded-full font-bold text-xs hover:bg-red-700 active:scale-90 transition-all">Simpan</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-white/20 backdrop-blur-md"></div>
+                    <span class="text-white text-[10px] font-medium">Kreator Aura #${i+1}</span>
+                </div>
             </div>
         `;
         feed.appendChild(item);
     }
 }
 
-function listenChat() {
-    const q = query(collection(db, "global_messages"), orderBy("createdAt", "asc"));
-    onSnapshot(q, (snapshot) => {
-        const chatBox = document.getElementById('chat-box');
-        chatBox.innerHTML = '';
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const isMe = data.uid === auth.currentUser?.uid;
+function listenGlobalChat() {
+    const q = query(collection(db, "aura_chat"), orderBy("createdAt", "asc"));
+    onSnapshot(q, (snap) => {
+        const box = document.getElementById('chat-box');
+        box.innerHTML = '';
+        snap.forEach(doc => {
+            const d = doc.data();
+            const isMe = d.uid === auth.currentUser?.uid;
             const msg = document.createElement('div');
             msg.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
             msg.innerHTML = `
-                <div class="${isMe ? 'bg-[#E60023] text-white rounded-2xl rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-2xl rounded-tl-none'} p-3 max-w-[85%] text-sm shadow-sm">
-                    <p class="text-[9px] font-bold opacity-50 mb-1">${data.user}</p>
-                    <p>${data.text}</p>
+                <div class="${isMe ? 'bg-[#E60023] text-white rounded-3xl rounded-tr-none shadow-red-100' : 'bg-white text-gray-800 rounded-3xl rounded-tl-none border border-gray-100'} p-4 max-w-[85%] shadow-sm">
+                    <p class="text-[8px] font-black uppercase opacity-60 mb-1">${d.user}</p>
+                    <p class="text-sm font-medium leading-relaxed">${d.text}</p>
                 </div>
             `;
-            chatBox.appendChild(msg);
+            box.appendChild(msg);
         });
-        chatBox.scrollTop = chatBox.scrollHeight;
+        box.scrollTop = box.scrollHeight;
     });
 }
 
 window.sendMsg = async () => {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
-    if (!text) return;
+    if(!text) return;
     input.value = '';
-    await addDoc(collection(db, "global_messages"), {
+    await addDoc(collection(db, "aura_chat"), {
         text,
         user: auth.currentUser.displayName || auth.currentUser.email,
         uid: auth.currentUser.uid,
@@ -114,14 +136,14 @@ window.sendMsg = async () => {
 };
 
 window.startAiProcess = () => {
-    const prompt = document.getElementById('aiPrompt').value;
+    const subjek = document.getElementById('aiSubjek').value;
     const overlay = document.getElementById('loadingOverlay');
     const text = document.getElementById('loadingText');
 
-    if(!prompt) return alert("Masukkan prompt aura dulu!");
+    if(!subjek) return alert("Sebutkan subjek aura kamu!");
 
     overlay.style.display = 'flex';
-    const steps = ["Menganalisis Prompt...", "Memanggil VisiAura Cloud...", "Merender Partikel...", "Hampir Selesai..."];
+    const steps = ["Menganalisis Aura...", "Menghubungkan Google Veo 3...", "Merender Partikel Visual...", "Hampir Selesai..."];
     let i = 0;
     
     const timer = setInterval(() => {
@@ -131,15 +153,20 @@ window.startAiProcess = () => {
             clearInterval(timer);
             setTimeout(() => {
                 overlay.style.display = 'none';
-                alert("Visualisasi Aura Berhasil Dibuat!");
+                showToast("Video Aura berhasil dibuat!");
                 showSection('home');
             }, 1000);
         }
     }, 1500);
 };
 
-window.searchAura = () => {
-    const q = document.getElementById('searchInput').value.toLowerCase();
+window.showToast = (msg) => {
+    const toast = document.getElementById('toast');
+    toast.querySelector('p:last-child').innerText = msg;
+    toast.classList.remove('toast-hidden');
+    setTimeout(() => {
+        toast.classList.add('toast-hidden');
+    }, 4000);
 };
 
 window.onload = () => {
