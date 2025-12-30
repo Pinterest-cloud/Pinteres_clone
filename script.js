@@ -16,7 +16,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Link foto untuk tombol Google kamu
 const MY_CUSTOM_ICON = "https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056";
 
 onAuthStateChanged(auth, (user) => {
@@ -34,9 +33,12 @@ onAuthStateChanged(auth, (user) => {
     } else {
         authSec.classList.remove('hidden');
         appContent.classList.add('hidden');
-        // Pastikan logo google ganti ke foto kamu
+
         const gIcon = document.querySelector('.google-btn img');
-        if(gIcon) gIcon.src = MY_CUSTOM_ICON;
+        if(gIcon) {
+            gIcon.src = MY_CUSTOM_ICON;
+            gIcon.style.borderRadius = "50%";
+        }
         createFloatingCards();
     }
     loader.style.display = 'none';
@@ -70,7 +72,7 @@ window.showSection = (id) => {
 function createFloatingCards() {
     const bg = document.getElementById('floating-bg');
     if(!bg) return; bg.innerHTML = '';
-    for(let i=0; i<15; i++) {
+    for(let i=0; i<40; i++) {
         const card = document.createElement('div');
         card.className = 'floating-card shadow-lg';
         card.style.left = Math.random() * 90 + '%';
@@ -83,18 +85,16 @@ function createFloatingCards() {
 function populateFeed() {
     const feed = document.getElementById('feed-container');
     feed.innerHTML = '';
-    for(let i=0; i<20; i++) {
+    for(let i=0; i<50; i++) {
         const h = [250, 400, 300, 450][i % 4];
         const seed = Math.floor(Math.random() * 9999);
         const item = document.createElement('div');
         item.className = 'masonry-item group cursor-pointer bg-gray-200 rounded-xl overflow-hidden';
-        const aiUrl = `https://pollinations.ai/p/aesthetic-photography-${seed}?width=400&height=${h}&seed=${seed}&nologo=true&model=flux`;
-        item.innerHTML = `<img src="${aiUrl}" loading="lazy" class="w-full h-auto">`;
+        const aiUrl = `https://pollinations.ai/p/aesthetic-outfit-style-${seed}?width=400&height=${h}&seed=${seed}&nologo=true&model=flux`;
+        item.innerHTML = `<img src="${aiUrl}" loading="lazy" class="w-full h-auto min-h-[100px]">`;
         feed.appendChild(item);
     }
 }
-
-// --- FITUR AI UNTUK GAMBAR APA SAJA ---
 window.startRealAiProcess = async () => {
     const promptInput = document.getElementById('aiPrompt');
     const prompt = promptInput.value.trim();
@@ -103,19 +103,16 @@ window.startRealAiProcess = async () => {
     const resultImg = document.getElementById('aiResultImg');
     const btn = document.getElementById('btnGenerate');
 
-    if(!prompt) return showToast("Tulis apa yang ingin kamu buat!");
+    if(!prompt) return showToast("Tulis deskripsi Aura!");
 
     overlay.style.display = 'flex';
     btn.disabled = true;
-    btn.innerText = "MENGIMAJINASI...";
+    btn.innerText = "Ini dia...";
 
     const seed = Math.floor(Math.random() * 1000000);
-    // Menggunakan model Flux Pro yang bisa buat apa saja dengan kualitas HD
-    const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux&enhance=true`;
-
+    const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
     resultContainer.classList.add('hidden');
     
-    // Langsung set ke gambar, browser akan handle loadingnya
     const imgLoader = new Image();
     imgLoader.src = apiUrl;
     
@@ -126,16 +123,16 @@ window.startRealAiProcess = async () => {
         btn.disabled = false;
         btn.innerHTML = `<span>BUAT LAGI</span> <i data-lucide="refresh-cw" class="w-4 h-4"></i>`;
         lucide.createIcons();
-        showToast("Gambar Berhasil Dibuat!");
+        showToast("Gambar Berhasil Terwujud!");
     };
 
     imgLoader.onerror = () => {
-        // Jika gagal, tampilkan saja langsung (biasanya karena timeout browser)
+    
         resultImg.src = apiUrl;
         resultContainer.classList.remove('hidden');
         overlay.style.display = 'none';
         btn.disabled = false;
-        btn.innerText = "COBA LAGI";
+        btn.innerText = "COBA LAGI Ya";
     };
 };
 
@@ -145,66 +142,6 @@ window.saveAiResult = () => {
     link.href = imgUrl;
     link.target = "_blank";
     link.download = `VisiAura-AI-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
-
-function listenGlobalChat() {
-    const q = query(collection(db, "aura_chat_v2"), orderBy("createdAt", "asc"));
-    onSnapshot(q, (snap) => {
-        const box = document.getElementById('chat-box');
-        box.innerHTML = '';
-        snap.forEach(doc => {
-            const d = doc.data();
-            const isMe = d.uid === auth.currentUser?.uid;
-            const msg = document.createElement('div');
-            msg.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
-            msg.innerHTML = `
-                <div class="${isMe ? 'bg-[#E60023] text-white rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none border border-gray-100'} p-3 max-w-[85%] shadow-sm">
-                    <p class="text-[8px] font-bold uppercase opacity-50 mb-1">${d.user}</p>
-                    <p class="text-sm">${d.text}</p>
-                </div>
-            `;
-            box.appendChild(msg);
-        });
-        box.scrollTop = box.scrollHeight;
-    });
-}
-
-window.sendMsg = async () => {
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-    if(!text) return;
-    input.value = '';
-    try {
-        await addDoc(collection(db, "aura_chat_v2"), {
-            text,
-            user: auth.currentUser.displayName || auth.currentUser.email,
-            uid: auth.currentUser.uid,
-            createdAt: serverTimestamp()
-        });
-    } catch(e) { console.error(e); }
-};
-
-window.showToast = (msg) => {
-    const toast = document.getElementById('toast');
-    const toastMsg = document.getElementById('toastMsg');
-    if(!toast || !toastMsg) return;
-    toastMsg.innerText = msg;
-    toast.classList.remove('toast-hidden');
-    setTimeout(() => toast.classList.add('toast-hidden'), 3000);
-};
-
-window.onload = () => {
-    lucide.createIcons();
-};
-window.saveAiResult = () => {
-    const imgUrl = document.getElementById('aiResultImg').src;
-    const link = document.createElement('a');
-    link.href = imgUrl;
-    link.target = "_blank";
-    link.download = `VisiAura-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
