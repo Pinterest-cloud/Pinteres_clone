@@ -1,37 +1,93 @@
-<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisiAura - Gambar kreatif membawamu senang</title>
+    <title>VisiAura - Visual & AI Generator</title>
     
     <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="logo">V.AURA</div>
-        <div class="search-bar">
-            <input type="text" placeholder="Cari aura kreatif...">
+    <header class="navbar">
+        <div class="logo" onclick="showSection('dashboard')">V.AURA</div>
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Cari inspirasi (Minimalis, Retro, Cyber)..." onkeyup="searchAura()">
         </div>
-        <div class="user-menu">
-            <div class="avatar"></div>
+        <div class="nav-right">
+            <button class="btn-auth" onclick="toggleModal('authModal')">Daftar</button>
+            <div class="profile-circle"></div>
         </div>
-    </nav>
+    </header>
 
-    <main class="container">
-        <div class="masonry" id="pin-container">
-            
-        </div>
+    <main class="main-content">
+        
+        <section id="dashboard" class="page active">
+            <div class="masonry-grid" id="pinContainer">
+                
+            </div>
+        </section>
+
+        <section id="generator" class="page">
+            <div class="ai-box">
+                <div class="ai-header">
+                    <i class="fas fa-bolt"></i>
+                    <h2>Google Veo 3 Engine</h2>
+                </div>
+                <p class="ai-subtitle">Ubah teks menjadi aura visual sinematik</p>
+                <textarea id="aiPrompt" placeholder="Masukkan prompt kreatifmu di sini..."></textarea>
+                <div class="ai-controls">
+                    <select id="styleSelector">
+                        <option value="cinematic">Cinematic Dream</option>
+                        <option value="abstract">Abstract Aura</option>
+                        <option value="neon">Cyber Neon</option>
+                    </select>
+                    <button class="btn-gen" onclick="startAiProcess()">Generate</button>
+                </div>
+                <div id="loadingOverlay" class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p id="loadingText">Menghubungkan ke Engine...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="chat" class="page">
+            <div class="chat-window">
+                <div class="chat-header">Ruang Diskusi Aura</div>
+                <div class="chat-body" id="chatMessages">
+                    <div class="msg system">Selamat datang di komunitas VisiAura!</div>
+                </div>
+                <div class="chat-footer">
+                    <input type="text" id="chatInput" placeholder="Tulis pesan...">
+                    <button onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <div class="bottom-nav">
-        <button class="nav-btn active">🏠</button>
-        <button class="nav-btn plus">+</button>
-        <button class="nav-btn">💬</button>
+    <div id="authModal" class="modal">
+        <div class="modal-card">
+            <span class="close-btn" onclick="toggleModal('authModal')">&times;</span>
+            <h2>Gabung VisiAura</h2>
+            <p>Simpan inspirasi dan akses Veo 3 Engine</p>
+            <input type="text" placeholder="Nama Pengguna">
+            <input type="email" placeholder="Email">
+            <input type="password" placeholder="Kata Sandi">
+            <button class="btn-submit" onclick="handleAuth()">Buat Akun</button>
+        </div>
     </div>
+
+    <nav class="mobile-nav">
+        <button onclick="showSection('dashboard')" id="nav-home" class="active"><i class="fas fa-home"></i></button>
+        <button onclick="showSection('generator')" class="nav-plus"><i class="fas fa-plus"></i></button>
+        <button onclick="showSection('chat')"><i class="fas fa-comment-dots"></i></button>
+    </nav>
 
     <script src="script.js"></script>
 </body>
 </html>
+
 
