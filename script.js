@@ -1,3 +1,4 @@
+// Data dummy untuk konten
 const images = [
     { title: "Aura Minimalis", height: 300 },
     { title: "Cyberpunk Vibes", height: 450 },
@@ -11,13 +12,15 @@ const images = [
 
 const container = document.getElementById('pin-container');
 
+// Fungsi untuk membuat elemen Pin
 function createPins() {
-  
-    for (let i = 0; i < 50; i++) {
+    // Kita buat 40 pin secara acak
+    for (let i = 0; i < 40; i++) {
         const item = images[i % images.length];
         const pin = document.createElement('div');
         pin.className = 'pin';
         
+        // Menggunakan placeholder image yang cepat
         const imgUrl = `https://picsum.photos/seed/${i + 123}/400/${item.height}`;
         
         pin.innerHTML = `
@@ -31,8 +34,10 @@ function createPins() {
     }
 }
 
+// Jalankan fungsi saat halaman siap
 document.addEventListener('DOMContentLoaded', createPins);
 
+// Simulasi Search
 document.querySelector('.search-bar input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         alert('Mencari aura: ' + e.target.value);
