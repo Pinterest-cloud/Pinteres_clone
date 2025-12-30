@@ -3,13 +3,13 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signO
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCqJjpivN3inIFFDybgDmrY_Y9r5nr2pAQ",
-  authDomain: "visiaura.firebaseapp.com",
-  projectId: "visiaura",
-  storageBucket: "visiaura.firebasestorage.app",
-  messagingSenderId: "74069943008",
-  appId: "1:74069943008:web:bd07b4430f77f34c87a685",
-  measurementId: "G-80KEV3MRTR"
+    apiKey: "AIzaSyAHJKndz9GNJM5PF3-QwI6OA8oEIo2n4eg",
+  authDomain: "visiaura-79db0.firebaseapp.com",
+  projectId: "visiaura-79db0",
+  storageBucket: "visiaura-79db0.firebasestorage.app",
+  messagingSenderId: "303849950518",
+  appId: "1:303849950518:web:f20967ceeb6ad5695bb797",
+  measurementId: "G-LGMPTPG0C1"
 };
 
 const app = initializeApp(firebaseConfig);
