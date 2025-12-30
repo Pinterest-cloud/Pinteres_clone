@@ -2,59 +2,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisiAura - visiAura Ai generator</title>
+    <title>VisiAura - image & AI Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="text-gray-900">
+<body class="text-gray-900 bg-[#FAFAFA]">
 
     <div id="loader" class="fixed inset-0 z-[1000] bg-white flex items-center justify-center">
         <div class="loader-circle"></div>
     </div>
     
-    <section id="auth-section" class="fixed inset-0 z-[500] bg-white flex items-center justify-center p-6 hidden">
-        <div class="w-full max-w-sm text-center">
+    <section id="auth-section" class="fixed inset-0 z-[500] bg-white flex items-center justify-center p-6 hidden overflow-hidden">
+        <div id="floating-bg" class="absolute inset-0 pointer-events-none opacity-20"></div>
+
+        <div class="w-full max-w-sm text-center relative z-10 bg-white/80 backdrop-blur-sm p-8 rounded-[40px] shadow-2xl border border-white">
             <div class="brand-logo mx-auto mb-6 shadow-xl">V</div>
-            <h1 class="text-3xl font-extrabold mb-2">VisiAura</h1>
-            <p class="text-gray-400 mb-8 font-medium">Satu akun untuk semua inspirasi.</p>
+            <h1 class="text-3xl font-extrabold mb-2 tracking-tight">VisiAura</h1>
+            <p class="text-gray-400 mb-8 font-medium">Melihat dunia dengan aura berbeda.</p>
             
-            <button onclick="loginGoogle()" class="w-full bg-white border border-gray-200 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all mb-4 shadow-sm">
+            <button onclick="loginGoogle()" class="w-full bg-white border border-gray-100 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all mb-4 shadow-sm active:scale-95">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5">
                 Masuk dengan Google
             </button>
 
             <div class="relative py-4">
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
-                <span class="relative bg-white px-4 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Atau Manual</span>
+                <span class="relative bg-white px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Atau Manual</span>
             </div>
 
             <div class="space-y-3">
-                <input id="email-log" type="email" placeholder="Email" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all">
-                <input id="pass-log" type="password" placeholder="Kata Sandi" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all">
-                <button onclick="loginEmail()" class="w-full bg-[#E60023] text-white py-4 rounded-xl font-black shadow-lg shadow-red-100 active:scale-95 transition-all">Mulai</button>
+                <input id="email-log" type="email" placeholder="Email Sobat" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all text-sm">
+                <input id="pass-log" type="password" placeholder="Sandi" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all text-sm">
+                <button onclick="loginEmail()" class="w-full bg-[#E60023] text-white py-4 rounded-xl font-black shadow-lg shadow-red-100 active:scale-95 transition-all uppercase text-xs tracking-widest">Jelajahi Sekarang</button>
             </div>
         </div>
     </section>
 
     <div id="app-content" class="hidden">
         <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 px-6 py-4 flex items-center justify-between border-b border-gray-50">
-            <div class="flex items-center gap-2" onclick="showSection('home')">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="showSection('home')">
                 <div class="w-8 h-8 bg-[#E60023] rounded-lg flex items-center justify-center text-white font-black italic text-sm">V</div>
-                <span class="font-bold tracking-tight text-lg">VisiAura</span>
+                <span class="font-bold tracking-tighter text-lg hidden sm:block">VisiAura</span>
             </div>
 
             <div class="search-bar-mini hidden md:flex flex-1 max-w-md mx-8">
-                <input type="text" id="searchInput" onkeyup="searchAura()" placeholder="Cari inspirasi..." class="w-full bg-gray-100 border-none rounded-full px-6 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100">
+                <input type="text" id="searchInput" onkeyup="searchAura()" placeholder="Cari aura estetik..." class="w-full bg-gray-100 border-none rounded-full px-6 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100">
             </div>
 
             <div id="user-pill" class="flex items-center gap-3 bg-gray-50 p-1.5 pr-4 rounded-full cursor-pointer hover:bg-gray-100 transition-all">
-                <div id="avatar-container" class="w-8 h-8 rounded-full overflow-hidden bg-gray-200"></div>
-                <span id="nav-username" class="text-xs font-bold text-gray-600">Sobat Aura</span>
+                <div id="avatar-container" class="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-white"></div>
+                <span id="nav-username" class="text-[10px] font-bold text-gray-600 truncate max-w-[80px]">Sobat Aura</span>
             </div>
         </header>
 
-        <main class="pt-24 pb-24 px-4 md:px-8 max-w-7xl mx-auto">
+        <div class="fixed top-[72px] left-0 right-0 bg-white/80 backdrop-blur-md z-40 py-3 border-b border-gray-50 overflow-x-auto no-scrollbar scroll-smooth">
+            <div class="flex items-center gap-3 px-6 whitespace-nowrap">
+                <button class="cat-pill active">Semua</button>
+                <button class="cat-pill">Fotografi</button>
+                <button class="cat-pill">Interior</button>
+                <button class="cat-pill">OOTD</button>
+                <button class="cat-pill">Arsitektur</button>
+                <button class="cat-pill">Minimalis</button>
+                <button class="cat-pill">Cyberpunk</button>
+                <button class="cat-pill">Retro</button>
+                <button class="cat-pill">Nature</button>
+            </div>
+        </div>
+
+        <main class="pt-36 pb-24 px-4 md:px-8 max-w-[1600px] mx-auto">
             
             <div id="tab-home" class="page active">
                 <div class="masonry" id="feed-container"></div>
@@ -64,41 +80,65 @@
                 <div class="ai-box shadow-2xl">
                     <div class="ai-header">
                         <i data-lucide="sparkles"></i>
-                        <h2 class="text-xl font-bold">VisiAura AI Generator</h2>
+                        <h2 class="text-xl font-bold italic">Google Veo 3 Generator</h2>
                     </div>
-                    <p class="ai-subtitle">Ubah imajinasimu menjadi visual aura yang nyata.</p>
-                    <textarea id="aiPrompt" placeholder="Contoh: Pemandangan kota cyber didalam sebuah bola kristal..."></textarea>
-                    <div class="ai-controls">
-                        <select id="aiStyle">
-                            <option value="cinematic">Cinematic 4K</option>
-                            <option value="anime">Anime Style</option>
-                            <option value="realistic">Realistic Photography</option>
-                        </select>
-                        <button onclick="startAiProcess()" class="btn-gen">Generate</button>
+                    <p class="ai-subtitle">Deskripsikan imajinasimu, biarkan AI merender videonya.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="space-y-2">
+                            <label class="text-[10px] uppercase font-bold text-gray-400">Subjek Utama</label>
+                            <input type="text" id="aiSubjek" placeholder="Misal: Kucing Astronot" class="ai-input">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] uppercase font-bold text-gray-400">Gaya Visual</label>
+                            <select id="aiStyle" class="ai-input">
+                                <option value="cinematic">Cinematic 4K</option>
+                                <option value="anime">Anime Style</option>
+                                <option value="cyber">Cyberpunk</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <textarea id="aiPrompt" placeholder="Ceritakan gerakan dan pencahayaannya..."></textarea>
+                    
+                    <button onclick="startAiProcess()" class="btn-gen w-full mt-4 flex items-center justify-center gap-2">
+                        <span>GENERATE VIDEO</span>
+                        <i data-lucide="zap" class="w-4 h-4 fill-white"></i>
+                    </button>
                     
                     <div id="loadingOverlay" class="loading-overlay">
-                        <div class="spinner"></div>
-                        <p id="loadingText" class="text-sm font-bold text-red-500">Menganalisis Aura...</p>
+                        <div class="spinner-neon"></div>
+                        <p id="loadingText" class="text-sm font-bold text-[#E60023] animate-pulse">Menghubungkan ke Veo 3...</p>
                     </div>
                 </div>
             </div>
 
             <div id="tab-chat" class="page hidden max-w-2xl mx-auto">
                 <div class="chat-window">
-                    <div class="chat-header">
-                        <i data-lucide="message-square" class="inline-block mr-2 w-5 h-5 text-red-500"></i>
-                        Diskusi Global
+                    <div class="chat-header flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i data-lucide="globe" class="w-4 h-4"></i> Diskusi Global</span>
+                        <span class="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded-full">Online</span>
                     </div>
                     <div id="chat-box" class="chat-body no-scrollbar"></div>
                     <div class="chat-footer">
-                        <input id="chat-input" type="text" placeholder="Ketik pesan positif...">
-                        <button onclick="sendMsg()"><i data-lucide="send"></i></button>
+                        <input id="chat-input" type="text" placeholder="Bagikan aura positifmu...">
+                        <button onclick="sendMsg()"><i data-lucide="send" class="w-4 h-4"></i></button>
                     </div>
                 </div>
             </div>
-
         </main>
+
+        <div id="toast" class="toast-hidden">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#E60023] rounded-full flex items-center justify-center text-white">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold">Pesan Masuk</p>
+                    <p class="text-[10px] text-gray-500">Seseorang menyukai Pin Anda.</p>
+                </div>
+            </div>
+        </div>
 
         <nav class="mobile-nav">
             <button onclick="showSection('home')" id="nav-home" class="active"><i data-lucide="home"></i></button>
