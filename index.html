@@ -1,266 +1,812 @@
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pinterest Clone</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --bg: #000000; --text: #ffffff; --gray: #262626; --accent: #e60023; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  onAuthStateChanged,
+  signOut,
+  updateProfile
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  query, 
+  orderBy, 
+  onSnapshot, 
+  serverTimestamp, 
+  doc, 
+  setDoc,
+  deleteDoc,
+  where,
+  getDocs,
+  limit
+} from 'firebase/firestore';
+import { 
+  Home, Search, Plus, MessageCircle, User, Video, Send, X, 
+  Bell, CheckCircle, AlertCircle, Settings, Mail, Shield, 
+  HelpCircle, Trash2, Users, Layout, Zap, Sun, Sparkles,
+  ChevronRight, Heart, Bookmark, BarChart3, Filter, Palette
+} from 'lucide-react';
 
-        #auth-page { position: fixed; inset: 0; z-index: 10000; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 50px; }
-        .bg-collage { position: absolute; top: 0; width: 100%; height: 60%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; opacity: 0.6; filter: blur(1px); }
-        .bg-collage img { width: 100%; height: 150px; object-fit: cover; border-radius: 15px; }
-        .auth-content { position: relative; width: 100%; padding: 0 30px; text-align: center; }
-        .auth-content h1 { font-size: 28px; margin-bottom: 30px; }
-        .auth-input { width: 100%; background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 15px 20px; border-radius: 30px; margin-bottom: 10px; font-size: 16px; outline: none; }
-        .btn-red { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 16px; margin-bottom: 10px; cursor: pointer; }
-        .btn-google { width: 100%; background: #fff; color: #000; border: none; padding: 12px; border-radius: 30px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
-        .btn-google img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+// --- CONFIGURASI FIREBASE ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAjy-TL1OIZcWoXafKpjjGP45tfbe1B5Sc",
+  authDomain: "visiauracl-8339a.firebaseapp.com",
+  projectId: "visiauracl-8339a",
+  storageBucket: "visiauracl-8339a.firebasestorage.app",
+  messagingSenderId: "780780435918",
+  appId: "1:780780435918:web:a66a8180324903126c139f",
+  measurementId: "G-8FYCPWYV41"
+};
 
-        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: space-around; padding: 10px 0 25px; z-index: 999; }
-        .nav-item { color: #8e8e8e; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; flex: 1; }
-        .nav-item i { font-size: 22px; }
-        .nav-item.active { color: #fff; }
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
 
-        .page { display: none; padding-bottom: 80px; }
-        .page.active { display: block; }
-        
-        .header-search { position: sticky; top: 0; background: #000; padding: 10px 15px; z-index: 100; display: flex; align-items: center; gap: 10px; }
-        .search-bar { flex: 1; background: var(--gray); border-radius: 25px; padding: 10px 15px; display: flex; align-items: center; gap: 10px; }
-        .search-bar input { background: transparent; border: none; color: #fff; flex: 1; outline: none; }
+// --- DATA ASSET MASIF (50+ Items Simulated) ---
+const INTEREST_OPTIONS = [
+  { id: 'fotografi', label: 'Fotografi', img: 'https://picsum.photos/seed/photo/300/300' },
+  { id: 'interior', label: 'Interior', img: 'https://picsum.photos/seed/interior/300/300' },
+  { id: 'ootd', label: 'OOTD', img: 'https://picsum.photos/seed/fashion/300/300' },
+  { id: 'arsitektur', label: 'Arsitektur', img: 'https://picsum.photos/seed/arch/300/300' },
+  { id: 'alam', label: 'Alam', img: 'https://picsum.photos/seed/nature/300/300' },
+  { id: 'minimalis', label: 'Minimalis', img: 'https://picsum.photos/seed/min/300/300' }
+];
 
-        .pin-container { column-count: 2; column-gap: 10px; padding: 10px; }
-        .card { break-inside: avoid; margin-bottom: 10px; border-radius: 15px; overflow: hidden; background: #1a1a1a; }
-        .card img { width: 100%; display: block; }
+const generateMassivePins = () => {
+  const categories = ["Fotografi", "Interior", "OOTD", "Alam", "Arsitektur", "Minimalis"];
+  return Array.from({ length: 60 }).map((_, i) => ({
+    id: `pin-${i}`,
+    title: `${categories[i % categories.length]} Aura ${Math.floor(i/6 + 1)}`,
+    category: categories[i % categories.length],
+    image: `https://picsum.photos/seed/aura-v2-${i}/600/${[700, 900, 600, 1000, 800][i % 5]}`,
+    author: `Kreator_${i}`,
+    likes: Math.floor(Math.random() * 500)
+  }));
+};
 
-        .profile-tabs { display: flex; justify-content: center; gap: 30px; padding: 15px 0; border-bottom: 1px solid #222; }
-        .tab-item { font-weight: bold; color: #8e8e8e; position: relative; padding-bottom: 5px; cursor: pointer; }
-        .tab-item.active { color: #fff; }
-        .tab-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #fff; border-radius: 2px; }
+const MOCK_PINS = generateMassivePins();
 
-        #photo-detail { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; overflow-y: auto; }
-        .action-top { padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #000; }
-        .btn-save-round { background: var(--accent); color: white; padding: 10px 25px; border-radius: 25px; border: none; font-weight: bold; }
-        .comment-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; }
-    </style>
-</head>
-<body>
+// --- COMPONENTS ---
 
-    <div id="auth-page">
-        <div class="bg-collage">
-            <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=200">
-            <img src="https://images.unsplash.com/photo-1526336024174-e58f5cdd8e13?w=200">
-            <img src="https://images.unsplash.com/photo-1516724562728-afc824a36e84?w=200">
-        </div>
-        <div class="auth-content">
-            <i class="fab fa-pinterest" style="color:var(--accent); font-size:60px; margin-bottom:20px;"></i>
-            <h1>Ciptakan kehidupan yang Anda sukai</h1>
-            <input type="email" id="email-auth" class="auth-input" placeholder="Alamat email">
-            <input type="password" id="pass-auth" class="auth-input" placeholder="Kata sandi">
-            <button class="btn-red" id="btn-login-manual">Lanjutkan</button>
-            <button class="btn-google" id="btn-google-auth">
-                <img src="https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056" alt="G"> 
-                Lanjutkan dengan Google
-            </button>
-        </div>
+// 1. Validasi Input Real-time
+const useFormValidation = (email) => {
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (email && !/\S+@\S+\.\S+/.test(email)) {
+      setError('Format email tidak valid');
+    } else {
+      setError('');
+    }
+  }, [email]);
+  return error;
+};
+
+// 2. Toast Notification (Glassmorphism)
+const Toast = ({ message, type, onClose }) => (
+  <motion.div
+    initial={{ y: 50, opacity: 0, scale: 0.8 }}
+    animate={{ y: 0, opacity: 1, scale: 1 }}
+    exit={{ y: 20, opacity: 0, scale: 0.8 }}
+    className="fixed bottom-24 right-4 md:bottom-10 md:right-10 z-[100] p-5 rounded-[28px] backdrop-blur-2xl bg-white/70 border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex items-center gap-4 min-w-[320px]"
+  >
+    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${type === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+      {type === 'error' ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
     </div>
-
-    <div id="photo-detail">
-        <div class="action-top">
-            <i class="fa fa-chevron-left" onclick="closeDetail()" style="font-size:20px; cursor:pointer;"></i>
-            <button class="btn-save-round" onclick="saveToProfile()">Simpan</button>
-        </div>
-        <img id="detail-img" src="" style="width:100%;">
-        <div style="padding:20px;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
-                <div id="pfp-mini" style="width:35px; height:35px; border-radius:50%; background-color: #00d084; background-size:cover; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
-                <strong id="name-mini">User</strong>
-                <button style="margin-left:auto; background:var(--gray); border:none; color:white; padding:8px 15px; border-radius:20px; font-weight:bold;">Ikuti</button>
-            </div>
-            <h4>Komentar</h4>
-            <div id="comments-list" style="margin: 15px 0;"></div>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="comment-input" placeholder="Tambahkan komentar" style="flex:1; background:var(--gray); border:none; padding:12px 20px; border-radius:25px; color:white; outline:none;">
-                <button onclick="addComment()" style="background:none; border:none; color:var(--accent); font-weight:bold;">Kirim</button>
-            </div>
-        </div>
+    <div className="flex-1">
+      <p className="text-sm font-bold text-gray-900 leading-tight">{message}</p>
+      <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">Notifikasi Sistem</p>
     </div>
+    <button onClick={onClose} className="text-gray-400 hover:text-gray-900"><X size={18} /></button>
+  </motion.div>
+);
 
-    <div id="main-app" style="display:none;">
-        <div id="page-beranda" class="page active">
-            <header class="header-search">
-                <div class="search-bar">
-                    <i class="fa fa-search"></i>
-                    <input type="text" id="search-beranda" placeholder="Cari ide..." onkeypress="handleSearch(event)">
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [onboardingStep, setOnboardingStep] = useState(1); // 1: Auth, 2: Minat
+  const [activeTab, setActiveTab] = useState('home');
+  const [toast, setToast] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Auth States
+  const [authMode, setAuthMode] = useState('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const emailError = useFormValidation(email);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        // Cek apakah data user sudah ada di Firestore
+        const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", currentUser.uid)));
+        if (userDoc.empty && onboardingStep === 1) {
+          setOnboardingStep(2);
+        } else {
+          setOnboardingStep(0); // Selesai onboarding
+        }
+      }
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [onboardingStep]);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    if (emailError) return showToast("Mohon perbaiki format email", "error");
+    
+    try {
+      if (authMode === 'register') {
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(res.user, { displayName });
+        showToast("Langkah terakhir: Pilih minat Anda");
+        setOnboardingStep(2);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        showToast("Senang melihat Anda kembali!");
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      showToast("Gagal masuk dengan Google", 'error');
+    }
+  };
+
+  if (loading) return (
+    <div className="h-screen w-full flex items-center justify-center bg-white">
+      <div className="w-10 h-10 border-[3px] border-[#E60023] border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+
+  // --- VIEW: ONBOARDING & AUTH ---
+  if (!user || onboardingStep > 0) {
+    return (
+      <div className="relative h-screen w-full flex items-center justify-center bg-white overflow-hidden">
+        {/* Floating Background Assets */}
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ y: '110vh', x: `${(i * 7) % 100}vw`, opacity: 0 }}
+              animate={{ y: '-20vh', opacity: [0, 1, 1, 0] }}
+              transition={{ duration: 15 + i, repeat: Infinity, delay: i * 1.2, ease: "linear" }}
+              className="absolute w-40 h-56 rounded-[40px] bg-gray-100 overflow-hidden shadow-xl border border-white"
+            >
+              <img src={`https://picsum.photos/seed/bg-aura-${i}/400/600`} className="w-full h-full object-cover" alt="" />
+            </motion.div>
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait">
+          {onboardingStep === 1 ? (
+            <motion.div 
+              key="auth"
+              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }}
+              className="relative z-10 w-full max-w-[420px] bg-white/90 backdrop-blur-3xl p-12 rounded-[60px] shadow-[0_40px_100px_rgba(0,0,0,0.1)] border border-white text-center mx-6"
+            >
+              <div className="w-16 h-16 bg-[#E60023] rounded-[24px] flex items-center justify-center text-white font-black text-2xl mx-auto mb-6 shadow-xl shadow-red-200">V</div>
+              <h1 className="text-3xl font-black text-gray-900 mb-2">VisiAura</h1>
+              <p className="text-gray-400 text-sm mb-8 font-medium">Visualisasikan aura kreatifitasmu.</p>
+
+              <form onSubmit={handleAuth} className="space-y-4">
+                {authMode === 'register' && (
+                  <input 
+                    type="text" placeholder="Nama Lengkap" 
+                    className="w-full px-7 py-4 rounded-2xl bg-gray-50 border border-transparent focus:border-red-100 outline-none focus:ring-4 focus:ring-red-500/5 transition-all font-medium"
+                    value={displayName} onChange={(e) => setDisplayName(e.target.value)} required
+                  />
+                )}
+                <div className="relative">
+                  <input 
+                    type="email" placeholder="Email" 
+                    className={`w-full px-7 py-4 rounded-2xl bg-gray-50 border ${emailError ? 'border-red-300' : 'border-transparent'} outline-none focus:ring-4 focus:ring-red-500/5 transition-all font-medium`}
+                    value={email} onChange={(e) => setEmail(e.target.value)} required
+                  />
+                  {emailError && <span className="absolute -bottom-5 left-2 text-[10px] text-red-500 font-bold uppercase">{emailError}</span>}
                 </div>
-            </header>
-            <div class="pin-container" id="grid-home"></div>
-        </div>
+                <input 
+                  type="password" placeholder="Password" 
+                  className="w-full px-7 py-4 rounded-2xl bg-gray-50 border border-transparent outline-none focus:ring-4 focus:ring-red-500/5 transition-all font-medium"
+                  value={password} onChange={(e) => setPassword(e.target.value)} required
+                />
+                <button className="w-full py-4 bg-[#E60023] text-white rounded-2xl font-black shadow-2xl shadow-red-200 hover:scale-[1.02] active:scale-95 transition-all mt-4">
+                  {authMode === 'login' ? 'Masuk Sekarang' : 'Daftar Akun'}
+                </button>
+              </form>
 
-        <div id="page-cari" class="page">
-            <div style="padding:15px; font-weight:bold; font-size:20px;">Ide untuk Anda</div>
-            <div class="pin-container" id="grid-cari"></div>
-        </div>
+              <div className="my-8 flex items-center gap-4 text-gray-300">
+                <div className="h-[1px] flex-1 bg-gray-100"></div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Atau</span>
+                <div className="h-[1px] flex-1 bg-gray-100"></div>
+          </div>
 
-        <div id="page-profil" class="page">
-            <div style="text-align:center; padding:30px 0;">
-                <label for="pfp-upload">
-                    <div id="u-pfp-main" style="width:100px; height:100px; border-radius:50%; background:#00d084; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:bold; background-size:cover; cursor:pointer;">U</div>
-                </label>
-                <input type="file" id="pfp-upload" hidden accept="image/*" onchange="changeProfilePic(this)">
-                <h2 id="u-name-main" style="margin-top:15px;">User Name</h2>
-                <button onclick="logout()" style="background:none; border:none; color:gray; font-size:12px; margin-top:5px; cursor:pointer;">Keluar dari Akun</button>
+             <button 
+                onClick={handleGoogleLogin}
+                className="w-full py-4 bg-white border border-gray-100 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-gray-50 transition-all text-sm"
+              >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                Lanjutkan dengan Google
+              </button>
+
+              <button 
+                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                className="mt-8 text-sm text-gray-400 font-bold hover:text-[#E60023] transition-colors"
+              >
+                {authMode === 'login' ? 'Belum punya aura? Daftar di sini' : 'Sudah punya akun? Masuk'}
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="minat"
+              initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }}
+              className="relative z-10 w-full max-w-2xl text-center px-6"
+            >
+              <h2 className="text-4xl font-black mb-4">Pilih Aura Kamu</h2>
+              <p className="text-gray-500 mb-10">Pilih 3 kategori untuk mempersonalisasi feed Anda.</p>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+                {INTEREST_OPTIONS.map((opt) => (
+                  <InterestCard key={opt.id} option={opt} />
+                ))}
+              </div>
+
+              <button 
+                onClick={() => setOnboardingStep(0)}
+                className="px-16 py-4 bg-black text-white rounded-full font-black hover:scale-105 transition-all shadow-2xl"
+              >
+                Selesai & Masuk Dashboard
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>{toast && <Toast {...toast} onClose={() => setToast(null)} />}</AnimatePresence>
+      </div>
+    );
+  }
+
+  // --- VIEW: MAIN DASHBOARD ---
+  return (
+    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-red-100 selection:text-[#E60023]">
+      {/* Sidebar Nav (Desktop) */}
+      <nav className="hidden lg:flex fixed left-0 top-0 h-full w-24 flex-col items-center py-10 bg-white border-r border-gray-50 z-50">
+        <div className="w-12 h-12 bg-[#E60023] rounded-2xl flex items-center justify-center text-white font-black mb-12 shadow-xl shadow-red-50">V</div>
+        <div className="flex flex-col gap-10 flex-1">
+          <NavBtn icon={<Home />} active={activeTab === 'home'} onClick={() => setActiveTab('home')} label="Home" />
+          <NavBtn icon={<Search />} active={activeTab === 'search'} onClick={() => setActiveTab('search')} label="Search" />
+          <NavBtn icon={<Plus />} active={activeTab === 'create'} onClick={() => setActiveTab('create')} label="Create" />
+          <NavBtn icon={<MessageCircle />} active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} label="Chat" />
+          <NavBtn icon={<BarChart3 />} active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} label="Admin" />
+        </div>
+        <NavBtn icon={<User />} active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} label="User" />
+      </nav>
+
+      {/* Main Content */}
+      <main className="lg:ml-24 pb-24 lg:pb-0">
+        <header className="sticky top-0 bg-white/80 backdrop-blur-xl z-40 px-6 py-5 md:px-12 flex items-center gap-8 border-b border-gray-50">
+          <div className="relative flex-1 max-w-3xl">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Cari Fotografi, OOTD, Arsitektur..." 
+              className="w-full bg-gray-100/60 py-4 pl-14 pr-8 rounded-[20px] outline-none focus:ring-4 focus:ring-red-500/5 transition-all border border-transparent focus:bg-white focus:border-gray-100 font-medium"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-5 ml-auto">
+            <button className="p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all relative text-gray-500">
+              <Bell size={20} />
+              <span className="absolute top-3 right-3 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
+            </button>
+            <div 
+              className="w-12 h-12 rounded-[20px] bg-gradient-to-tr from-red-500 to-pink-500 flex items-center justify-center text-white font-black cursor-pointer shadow-lg shadow-red-100" 
+              onClick={() => setActiveTab('profile')}
+            >
+              {user.displayName ? user.displayName[0].toUpperCase() : 'U'}
             </div>
-            <div class="profile-tabs">
-                <div class="tab-item active">Pin</div>
-                <div class="tab-item">Disimpan</div>
-            </div>
-            <div class="pin-container" id="my-pins"></div>
-        </div>
+          </div>
+        </header>
 
-        <nav class="navbar">
-            <div class="nav-item active" onclick="navTo('page-beranda', this)"><i class="fa fa-home"></i><span>Beranda</span></div>
-            <div class="nav-item" onclick="navTo('page-cari', this)"><i class="fa fa-search"></i><span>Cari</span></div>
-            <div class="nav-item" onclick="navTo('page-profil', this)"><i class="fa fa-user-circle"></i><span>Profil</span></div>
-        </nav>
+        <section className="p-6 md:p-12">
+          <AnimatePresence mode="wait">
+            {activeTab === 'home' && <DashboardView query={searchQuery} showToast={showToast} />}
+            {activeTab === 'create' && <VeoGeneratorView setIsGenerating={setIsGenerating} showToast={showToast} />}
+            {activeTab === 'chat' && <ChatView user={user} />}
+            {activeTab === 'admin' && <AdminDashboardView />}
+            {activeTab === 'profile' && <ProfileView user={user} onSignOut={() => signOut(auth)} setActiveTab={setActiveTab} />}
+            {activeTab === 'help' && <HelpCenterView user={user} />}
+          </AnimatePresence>
+        </section>
+      </main>
+
+      {/* Mobile Nav */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-2xl border-t border-gray-50 px-8 py-5 flex justify-between items-center z-50">
+        <MobileNavBtn icon={<Home />} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+        <MobileNavBtn icon={<Search />} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
+        <button 
+          onClick={() => setActiveTab('create')}
+          className="w-14 h-14 bg-[#E60023] text-white rounded-2xl flex items-center justify-center shadow-xl shadow-red-200 active:scale-90 transition-all -translate-y-4 border-4 border-white"
+        >
+          <Plus size={28} strokeWidth={3} />
+        </button>
+        <MobileNavBtn icon={<MessageCircle />} active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
+        <MobileNavBtn icon={<User />} active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+      </nav>
+
+      <AnimatePresence>
+        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+        {isGenerating && <VeoLoadingOverlay />}
+      </AnimatePresence>
     </div>
+  );
+}
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// --- SUB-COMPONENTS ---
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDwKskc4ZzZqjGmSKZHbLTrAKY38VWh6L4",
-            authDomain: "pinterest-clone-7c535.firebaseapp.com",
-            projectId: "pinterest-clone-7c535",
-            storageBucket: "pinterest-clone-7c535.firebasestorage.app",
-            messagingSenderId: "490245029712",
-            appId: "1:490245029712:web:8a5aa487d54dcd20b8f655"
-        };
+function InterestCard({ option }) {
+  const [selected, setSelected] = useState(false);
+  return (
+    <div 
+      onClick={() => setSelected(!selected)}
+      className={`relative aspect-square rounded-[32px] overflow-hidden cursor-pointer transition-all border-4 ${selected ? 'border-[#E60023] scale-95' : 'border-transparent hover:scale-102'}`}
+    >
+      <img src={option.img} className="w-full h-full object-cover" alt={option.label} />
+      <div className={`absolute inset-0 flex items-center justify-center transition-all ${selected ? 'bg-black/40' : 'bg-black/20 hover:bg-black/10'}`}>
+        <span className="text-white font-black text-lg drop-shadow-lg">{option.label}</span>
+      </div>
+      {selected && (
+        <div className="absolute top-4 right-4 bg-[#E60023] text-white p-1 rounded-full">
+          <CheckCircle size={20} />
+        </div>
+      )}
+    </div>
+  );
+}
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+function DashboardView({ query, showToast }) {
+  const filteredPins = useMemo(() => {
+    return MOCK_PINS.filter(pin => 
+      pin.title.toLowerCase().includes(query.toLowerCase()) || 
+      pin.category.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query]);
 
-        document.getElementById('btn-login-manual').onclick = () => {
-            const email = document.getElementById('email-auth').value;
-            const pass = document.getElementById('pass-auth').value;
-            signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Error: " + e.message));
-        };
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-8"
+    >
+      {filteredPins.map((pin) => (
+        <PinCard key={pin.id} pin={pin} showToast={showToast} />
+      ))}
+    </motion.div>
+  );
+}
 
-        document.getElementById('btn-google-auth').onclick = () => {
-            signInWithPopup(auth, provider).catch(e => alert(e.message));
-        };
+function PinCard({ pin, showToast }) {
+  const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
-        window.logout = () => signOut(auth);
+  const handleAction = (e, type) => {
+    e.stopPropagation();
+    if (type === 'save') {
+      setIsSaved(!isSaved);
+      showToast(isSaved ? "Pin dihapus" : "Disimpan ke Papan");
+    } else {
+      setIsLiked(!isLiked);
+      showToast(isLiked ? "Like dibatalkan" : "Aura disukai!");
+    }
+  };
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('auth-page').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-                window.currentUser = user;
-                updateUserProfileUI(user);
-            } else {
-                document.getElementById('auth-page').style.display = 'flex';
-                document.getElementById('main-app').style.display = 'none';
-            }
-        });
-    </script>
+  return (
+    <motion.div 
+      layout
+      whileHover={{ y: -5 }}
+      className="relative mb-8 break-inside-avoid group cursor-zoom-in"
+    >
+      <div className="relative rounded-[40px] overflow-hidden bg-gray-50 shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] transition-all duration-500">
+        <img src={pin.image} className="w-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={pin.title} />
+        
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-6 flex flex-col justify-between">
+          <div className="flex justify-end gap-2">
+            <button 
+              onClick={(e) => handleAction(e, 'save')}
+              className={`px-6 py-3 rounded-2xl font-black text-sm shadow-xl transition-all active:scale-90 ${isSaved ? 'bg-black text-white' : 'bg-[#E60023] text-white'}`}
+            >
+              {isSaved ? <Bookmark size={18} /> : 'Simpan'}
+            </button>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <button onClick={(e) => handleAction(e, 'like')} className={`p-3 rounded-full backdrop-blur-xl transition-all ${isLiked ? 'bg-red-500 text-white' : 'bg-white/20 text-white hover:bg-white/40'}`}>
+                <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
+              </button>
+            </div>
+            <div className="p-3 bg-white/20 backdrop-blur-xl rounded-full text-white hover:bg-white/40">
+              <ChevronRight size={18}/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="mt-4 px-3 flex justify-between items-start">
+        <div>
+          <h3 className="text-sm font-black truncate text-gray-900 w-40">{pin.title}</h3>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{pin.author}</p>
+        </div>
+        <div className="flex items-center gap-1 text-gray-400">
+          <Heart size={12} />
+          <span className="text-[10px] font-bold">{pin.likes}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
-    <script>
-        let selectedImg = "";
+function VeoGeneratorView({ setIsGenerating, showToast }) {
+  const [params, setParams] = useState({ subject: '', motion: 'Natural', lighting: 'Cinematic', style: 'Minimalist' });
 
-        function updateUserProfileUI(user) {
-            const name = user.displayName || user.email.split('@')[0];
-            document.getElementById('u-name-main').innerText = name;
-            document.getElementById('name-mini').innerText = name;
-            const pfp = localStorage.getItem('pfp') || user.photoURL;
-            if(pfp) {
-                document.getElementById('u-pfp-main').style.backgroundImage = `url('${pfp}')`;
-                document.getElementById('u-pfp-main').innerText = "";
-                document.getElementById('pfp-mini').style.backgroundImage = `url('${pfp}')`;
-                document.getElementById('pfp-mini').innerText = "";
-            } else {
-                document.getElementById('u-pfp-main').innerText = name[0].toUpperCase();
-            }
-        }
+  const handleGenerate = () => {
+    if (params.subject.length < 5) return showToast("Deskripsikan aura Anda lebih lengkap", "error");
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+      showToast("Video Veo 3 Aura Berhasil!", "success");
+    }, 5000);
+  };
 
-        function navTo(id, el) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
-            if(id === 'page-beranda') fetchImages('aesthetic', 'grid-home');
-            if(id === 'page-cari') fetchImages('nature', 'grid-cari');
-        }
+  return (
+    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+      <div className="bg-gray-900 rounded-[64px] p-12 md:p-20 text-white relative overflow-hidden shadow-2xl border border-white/5">
+        <div className="absolute -top-20 -right-20 w-80 h-80 bg-red-600/20 rounded-full blur-[120px]"></div>
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px]"></div>
 
-        async function fetchImages(query, targetId) {
-            const grid = document.getElementById(targetId);
-            grid.innerHTML = "<p style='padding:20px'>Memuat...</p>";
-            try {
-                const res = await fetch(`https://api.unsplash.com/photos/random?count=20&query=${query}&client_id=lzV4x5Ho_PmAkk4C6Ec6PuDyFrouDZFaTWVXRVBBb0k`);
-                const data = await res.json();
-                grid.innerHTML = "";
-                data.forEach(img => {
-                    const div = document.createElement('div');
-                    div.className = 'card';
-                    div.onclick = () => openDetail(img.urls.regular);
-                    div.innerHTML = `<img src="${img.urls.small}">`;
-                    grid.appendChild(div);
-                });
-            } catch(e) { grid.innerHTML = "Gagal memuat gambar."; }
-        }
+        <div className="relative z-10">
+          <div className="flex items-center gap-6 mb-12">
+            <div className="w-20 h-20 bg-gradient-to-tr from-red-600 to-red-400 rounded-[32px] flex items-center justify-center shadow-2xl shadow-red-600/30">
+              <Video className="text-white" size={36} />
+            </div>
+            <div>
+              <h2 className="text-4xl font-black tracking-tight">Veo 3 AI Engine</h2>
+              <p className="text-gray-400 font-medium">Render aura visual Anda dalam resolusi 4K.</p>
+            </div>
+          </div>
 
-        function handleSearch(event) {
-            if(event.key === "Enter") {
-                fetchImages(event.target.value, 'grid-home');
-            }
-        }
+          <div className="space-y-10">
+            <div className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-[40px] p-10 focus-within:border-red-500/50 transition-all">
+              <label className="text-[10px] uppercase tracking-[0.3em] text-red-500 font-black mb-6 block">Detail Subjek Visual</label>
+              <textarea 
+                className="w-full bg-transparent border-none text-2xl font-bold placeholder:text-gray-800 outline-none h-32 resize-none text-white"
+                placeholder="Gambarkan aura kreatifitas yang ingin Anda wujudkan..."
+                value={params.subject}
+                onChange={(e) => setParams({...params, subject: e.target.value})}
+              />
+            </div>
 
-        function openDetail(src) {
-            selectedImg = src;
-            document.getElementById('photo-detail').style.display = 'flex';
-            document.getElementById('detail-img').src = src;
-        }
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <GeneratorSelect label="Gerakan" value={params.motion} onChange={v => setParams({...params, motion: v})} options={['Natural', 'Fluid', 'Orbit', 'Static']} />
+              <GeneratorSelect label="Lighting" value={params.lighting} onChange={v => setParams({...params, lighting: v})} options={['Cinematic', 'Soft Aura', 'Neon Pulse', 'Golden']} />
+              <GeneratorSelect label="Estetika" value={params.style} onChange={v => setParams({...params, style: v})} options={['Minimalist', 'Hyper-real', 'Anime', 'Oil Paint']} />
+            </div>
 
-        function closeDetail() { document.getElementById('photo-detail').style.display = 'none'; }
+            <button 
+              onClick={handleGenerate}
+              className="w-full py-6 bg-[#E60023] rounded-[32px] font-black text-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-red-600/20"
+            >
+              Ciptakan Video Aura <Zap size={24} fill="currentColor" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
-        function saveToProfile() {
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.innerHTML = `<img src="${selectedImg}">`;
-            document.getElementById('my-pins').prepend(div);
-            alert("Berhasil disimpan!");
-            closeDetail();
-        }
+function GeneratorSelect({ label, value, onChange, options }) {
+  return (
+    <div className="space-y-3">
+      <span className="text-[10px] uppercase tracking-widest text-gray-500 font-black px-2">{label}</span>
+      <select 
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-red-500/30 transition-all appearance-none cursor-pointer font-bold"
+      >
+        {options.map(opt => <option key={opt} className="bg-black text-white" value={opt}>{opt}</option>)}
+      </select>
+    </div>
+  );
+}
 
-        function addComment() {
-            const input = document.getElementById('comment-input');
-            if(input.value.trim() !== "") {
-                const list = document.getElementById('comments-list');
-                const name = window.currentUser.displayName || "User";
-                list.innerHTML += `<div class="comment-item"><strong>${name}</strong>: ${input.value}</div>`;
-                input.value = "";
-            }
-        }
+function VeoLoadingOverlay() {
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-12"
+    >
+      <div className="relative w-40 h-40 mb-12">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 border-[6px] border-red-500/10 rounded-full"
+        />
+        <motion.div 
+          animate={{ rotate: -360 }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 border-t-[6px] border-[#E60023] rounded-full shadow-[0_0_40px_rgba(230,0,35,0.7)]"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+        </div>
+      </div>
+      <h3 className="text-4xl font-black text-white mb-6 tracking-tighter uppercase italic">Synthesizing Aura...</h3>
+      <p className="text-gray-500 max-w-sm text-sm font-medium leading-relaxed tracking-wide">
+        AI sedang menghitung lintasan visual berdasarkan parameter gaya dan pencahayaan yang Anda pilih.
+      </p>
+    </motion.div>
+  );
+}
 
-        function changeProfilePic(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const url = `url('${e.target.result}')`;
-                    document.getElementById('u-pfp-main').style.backgroundImage = url;
-                    document.getElementById('u-pfp-main').innerText = "";
-                    document.getElementById('pfp-mini').style.backgroundImage = url;
-                    localStorage.setItem('pfp', e.target.result);
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
+function ChatView({ user }) {
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState('');
+  const scrollRef = useRef();
 
-        fetchImages('aesthetic', 'grid-home');
-    </script>
-</body>
-</html>
+  useEffect(() => {
+    // Listener dengan cleanup untuk mencegah memory leak
+    const q = query(collection(db, "aura_chat"), orderBy("timestamp", "asc"), limit(50));
+    const unsub = onSnapshot(q, (snap) => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    try {
+      await addDoc(collection(db, "aura_chat"), {
+        text,
+        uid: user.uid,
+        email: user.email,
+        timestamp: serverTimestamp()
+      });
+      setText('');
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) { console.error(err); }
+  };
+
+return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto h-[80vh] flex flex-col bg-gray-50 rounded-[48px] overflow-hidden shadow-2xl border border-gray-100">
+      <div className="p-10 bg-white border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <div className="w-14 h-14 bg-red-50 text-[#E60023] rounded-[24px] flex items-center justify-center shadow-sm"><MessageCircle size={28}/></div>
+          <div>
+            <h2 className="text-2xl font-black tracking-tight">Kanal Aura Global</h2>
+            <p className="text-[10px] text-green-500 font-black uppercase tracking-widest flex items-center gap-2 mt-1">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+              Enkripsi Real-time Aktif
+            </p>
+          </div>
+        </div>
+        <button className="p-4 bg-gray-50 rounded-2xl text-gray-400 hover:text-black transition-all"><Settings size={20}/></button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-10 space-y-8 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-5">
+        {messages.map((m) => (
+          <div key={m.id} className={`flex flex-col ${m.uid === user.uid ? 'items-end' : 'items-start'}`}>
+            <span className="text-[10px] font-black text-gray-400 mb-2 px-2 uppercase tracking-[0.2em]">{m.email.split('@')[0]}</span>
+            <div className={`p-5 rounded-[32px] max-w-[75%] shadow-sm ${m.uid === user.uid ? 'bg-[#E60023] text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none'}`}>
+              <p className="text-[15px] font-medium leading-relaxed">{m.text}</p>
+            </div>
+          </div>
+        ))}
+        <div ref={scrollRef} />
+      </div>
+
+      <form onSubmit={handleSend} className="p-8 bg-white border-t border-gray-100 flex gap-6">
+        <input 
+          type="text" placeholder="Bagikan ide aura kamu..." 
+          className="flex-1 bg-gray-50 px-10 py-5 rounded-full border-none outline-none focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-gray-700"
+          value={text} onChange={e => setText(e.target.value)}
+        />
+        <button className="w-16 h-16 bg-[#E60023] text-white rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-xl shadow-red-200">
+          <Send size={24} />
+        </button>
+      </form>
+    </motion.div>
+  );
+}
+
+function AdminDashboardView() {
+  const stats = [
+    { label: "Total User", val: "12,840", icon: <Users size={24}/>, color: "text-blue-500" },
+    { label: "Aura Tercipta", val: "4,200", icon: <Layout size={24}/>, color: "text-[#E60023]" },
+    { label: "Render Veo 3", val: "892", icon: <Zap size={24}/>, color: "text-amber-500" }
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-6xl mx-auto">
+      <div className="flex items-center gap-6 mb-12">
+        <div className="w-16 h-16 bg-black rounded-[24px] flex items-center justify-center text-white"><BarChart3 size={28}/></div>
+        <div>
+          <h2 className="text-4xl font-black">Panel Moderasi Admin</h2>
+          <p className="text-gray-400 font-medium italic">Manajemen konten & performa engine VisiAura.</p>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-8 mb-16">
+        {stats.map((s, i) => (
+          <div key={i} className="bg-white p-10 rounded-[48px] border border-gray-100 shadow-sm">
+            <div className={`mb-6 ${s.color}`}>{s.icon}</div>
+            <h3 className="text-4xl font-black mb-2">{s.val}</h3>
+            <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-[48px] border border-gray-100 overflow-hidden">
+        <div className="p-10 border-b border-gray-50 flex justify-between items-center">
+          <h3 className="font-black text-xl">Moderasi Konten Terbaru</h3>
+          <button className="text-[10px] font-black uppercase text-[#E60023] border border-red-100 px-6 py-2 rounded-full">Lihat Semua</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                <th className="p-8">Preview</th>
+                <th className="p-8">Informasi Kreator</th>
+                <th className="p-8">Status</th>
+                <th className="p-8">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                  <td className="p-8">
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden">
+                      <img src={`https://picsum.photos/seed/mod-${i}/100/100`} alt="" />
+                    </div>
+                  </td>
+                  <td className="p-8">
+                    <p className="font-bold text-sm">User_ID_{i+102}</p>
+                    <p className="text-xs text-gray-400">user${i}@visiaura.com</p>
+                  </td>
+                  <td className="p-8">
+                    <span className="px-4 py-1.5 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-wider">Aman</span>
+                  </td>
+                  <td className="p-8">
+                    <button className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18}/></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function HelpCenterView({ user }) {
+  const handleSupport = () => {
+    const subject = encodeURIComponent("Bantuan VisiAura: [Tuliskan Kendala]");
+    const body = encodeURIComponent(`Halo Tim Support,\n\nsaya memiliki kendala pada: [Login/Veo AI/Lainnya].\n\nDetail Akun: ${user.email}\nPerangkat: ${navigator.userAgent}`);
+    window.location.href = `mailto:support@visiaura.com?subject=${subject}&body=${body}`;
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto py-10">
+      <div className="text-center mb-20">
+        <h2 className="text-5xl font-black mb-6">Pusat Bantuan</h2>
+        <p className="text-gray-500 max-w-lg mx-auto font-medium">Temukan solusi untuk aura kreatif Anda atau hubungi spesialis kami.</p>
+      </div>
+
+      <div className="space-y-6 mb-20">
+        {[
+          { q: "Bagaimana cara kerja Google Veo 3?", a: "Veo 3 menggunakan parameter subjek dan gaya untuk menghasilkan video berkualitas tinggi melalui pemrosesan awan Google." },
+          { q: "Apakah data saya aman?", a: "Ya, semua pesan dan file Anda dienkripsi melalui protokol Firebase Security Rules yang ketat." },
+          { q: "Cara menghapus Pin?", a: "Klik profil Anda, pilih tab 'Disimpan', lalu klik ikon sampah pada Pin yang ingin dihapus." }
+        ].map((faq, i) => (
+          <div key={i} className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <h4 className="font-black text-lg mb-3 flex items-center gap-3"><Sparkles size={18} className="text-[#E60023]"/> {faq.q}</h4>
+            <p className="text-gray-500 text-sm leading-relaxed font-medium">{faq.a}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-gradient-to-br from-gray-900 to-black p-16 rounded-[64px] text-center text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12"><HelpCircle size={200}/></div>
+        <h3 className="text-3xl font-black mb-6">Belum Menemukan Jawaban?</h3>
+        <p className="text-gray-400 mb-10 max-w-md mx-auto">Tanyakan langsung ke tim teknis kami. Kami akan merespon dalam waktu kurang dari 24 jam.</p>
+        <button 
+          onClick={handleSupport}
+          className="px-12 py-5 bg-[#E60023] text-white rounded-full font-black hover:scale-105 transition-all shadow-2xl shadow-red-600/20 flex items-center gap-4 mx-auto"
+        >
+          <Mail size={22} /> Hubungi Support (Email)
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function ProfileView({ user, onSignOut, setActiveTab }) {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-6xl mx-auto">
+      <div className="flex flex-col md:flex-row items-center gap-12 mb-20">
+        <div className="w-48 h-48 rounded-[64px] bg-gradient-to-tr from-[#E60023] to-pink-500 p-1.5 shadow-2xl shadow-red-100">
+          <div className="w-full h-full bg-white rounded-[58px] p-2">
+            <div className="w-full h-full bg-gray-100 rounded-[52px] overflow-hidden">
+              <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${user.email}`} className="w-full h-full object-cover" alt="" />
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 text-center md:text-left">
+          <h2 className="text-5xl font-black tracking-tighter mb-4">{user.displayName || user.email.split('@')[0]}</h2>
+          <div className="flex flex-wrap justify-center md:justify-start gap-8 mb-10 text-gray-500 font-bold uppercase tracking-widest text-xs">
+            <div className="flex flex-col gap-1"><span>240</span><span className="text-[10px] text-gray-300">Followers</span></div>
+            <div className="flex flex-col gap-1"><span>182</span><span className="text-[10px] text-gray-300">Following</span></div>
+            <div className="flex flex-col gap-1"><span>12k</span><span className="text-[10px] text-gray-300">Total Aura</span></div>
+          </div>
+          <div className="flex flex-wrap justify-center md:justify-start gap-4">
+            <button className="px-10 py-4 bg-black text-white rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl">Bagikan Profil</button>
+            <button onClick={() => setActiveTab('help')} className="px-10 py-4 bg-gray-50 text-gray-900 rounded-2xl font-black text-sm border border-gray-100">Bantuan</button>
+            <button onClick={onSignOut} className="p-4 bg-red-50 text-[#E60023] rounded-2xl"><Settings size={22}/></button>
+          </div>
+        </div>
+              </div>
+
+            <div className="columns-2 md:columns-4 gap-8">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className="mb-8 rounded-[40px] bg-gray-100 overflow-hidden relative group aspect-[4/5] shadow-sm hover:shadow-xl transition-all duration-500">
+            <img src={`https://picsum.photos/seed/user-pins-${i}/500/700`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex items-end">
+              <p className="text-white text-xs font-black uppercase tracking-widest">Koleksi Visual #{i+1}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function NavBtn({ icon, active, onClick, label }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`group relative p-4 rounded-2xl transition-all ${active ? 'bg-red-50 text-[#E60023]' : 'text-gray-400 hover:bg-gray-50'}`}
+    >
+      {React.cloneElement(icon, { size: 24, strokeWidth: active ? 2.5 : 2 })}
+      <span className="absolute left-24 px-4 py-2 bg-gray-900 text-white text-[10px] font-black uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none tracking-widest translate-x-[-10px] group-hover:translate-x-0">
+        {label}
+      </span>
+    </button>
+  );
+}
+
+function MobileNavBtn({ icon, active, onClick }) {
+  return (
+    <button onClick={onClick} className={`p-2 transition-all ${active ? 'text-[#E60023] scale-110' : 'text-gray-400'}`}>
+      {React.cloneElement(icon, { size: 24, strokeWidth: active ? 3 : 2 })}
+    </button>
+  );
+}
