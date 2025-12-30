@@ -2,91 +2,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisiAura - Visual & AI Generator</title>
-    
+    <title>VisiAura - visiAura Ai generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
+<body class="text-gray-900">
 
-    <header class="navbar">
-        <div class="logo" onclick="showSection('dashboard')">V.AURA</div>
-        <div class="search-container">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" id="searchInput" placeholder="Cari inspirasi (Minimalis, Retro, Cyber)..." onkeyup="searchAura()">
-        </div>
-        <div class="nav-right">
-            <button class="btn-auth" onclick="toggleModal('authModal')">Daftar</button>
-            <div class="profile-circle"></div>
-        </div>
-    </header>
+    <div id="loader" class="fixed inset-0 z-[1000] bg-white flex items-center justify-center">
+        <div class="loader-circle"></div>
+    </div>
+    
+    <section id="auth-section" class="fixed inset-0 z-[500] bg-white flex items-center justify-center p-6 hidden">
+        <div class="w-full max-w-sm text-center">
+            <div class="brand-logo mx-auto mb-6 shadow-xl">V</div>
+            <h1 class="text-3xl font-extrabold mb-2">VisiAura</h1>
+            <p class="text-gray-400 mb-8 font-medium">Satu akun untuk semua inspirasi.</p>
+            
+            <button onclick="loginGoogle()" class="w-full bg-white border border-gray-200 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all mb-4 shadow-sm">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5">
+                Masuk dengan Google
+            </button>
 
-    <main class="main-content">
-        
-        <section id="dashboard" class="page active">
-            <div class="masonry-grid" id="pinContainer">
-                
+            <div class="relative py-4">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
+                <span class="relative bg-white px-4 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Atau Manual</span>
             </div>
-        </section>
 
-        <section id="generator" class="page">
-            <div class="ai-box">
-                <div class="ai-header">
-                    <i class="fas fa-bolt"></i>
-                    <h2>Google Veo 3 Engine</h2>
-                </div>
-                <p class="ai-subtitle">Ubah teks menjadi aura visual sinematik</p>
-                <textarea id="aiPrompt" placeholder="Masukkan prompt kreatifmu di sini..."></textarea>
-                <div class="ai-controls">
-                    <select id="styleSelector">
-                        <option value="cinematic">Cinematic Dream</option>
-                        <option value="abstract">Abstract Aura</option>
-                        <option value="neon">Cyber Neon</option>
-                    </select>
-                    <button class="btn-gen" onclick="startAiProcess()">Generate</button>
-                </div>
-                <div id="loadingOverlay" class="loading-overlay">
-                    <div class="spinner"></div>
-                    <p id="loadingText">Menghubungkan ke Engine...</p>
-                </div>
+            <div class="space-y-3">
+                <input id="email-log" type="email" placeholder="Email" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all">
+                <input id="pass-log" type="password" placeholder="Kata Sandi" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all">
+                <button onclick="loginEmail()" class="w-full bg-[#E60023] text-white py-4 rounded-xl font-black shadow-lg shadow-red-100 active:scale-95 transition-all">Mulai</button>
             </div>
-        </section>
-
-        <section id="chat" class="page">
-            <div class="chat-window">
-                <div class="chat-header">Ruang Diskusi Aura</div>
-                <div class="chat-body" id="chatMessages">
-                    <div class="msg system">Selamat datang di komunitas VisiAura!</div>
-                </div>
-                <div class="chat-footer">
-                    <input type="text" id="chatInput" placeholder="Tulis pesan...">
-                    <button onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <div id="authModal" class="modal">
-        <div class="modal-card">
-            <span class="close-btn" onclick="toggleModal('authModal')">&times;</span>
-            <h2>Gabung VisiAura</h2>
-            <p>Simpan inspirasi dan akses Veo 3 Engine</p>
-            <input type="text" placeholder="Nama Pengguna">
-            <input type="email" placeholder="Email">
-            <input type="password" placeholder="Kata Sandi">
-            <button class="btn-submit" onclick="handleAuth()">Buat Akun</button>
         </div>
+    </section>
+
+    <div id="app-content" class="hidden">
+        <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 px-6 py-4 flex items-center justify-between border-b border-gray-50">
+            <div class="flex items-center gap-2" onclick="showSection('home')">
+                <div class="w-8 h-8 bg-[#E60023] rounded-lg flex items-center justify-center text-white font-black italic text-sm">V</div>
+                <span class="font-bold tracking-tight text-lg">VisiAura</span>
+            </div>
+
+            <div class="search-bar-mini hidden md:flex flex-1 max-w-md mx-8">
+                <input type="text" id="searchInput" onkeyup="searchAura()" placeholder="Cari inspirasi..." class="w-full bg-gray-100 border-none rounded-full px-6 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100">
+            </div>
+
+            <div id="user-pill" class="flex items-center gap-3 bg-gray-50 p-1.5 pr-4 rounded-full cursor-pointer hover:bg-gray-100 transition-all">
+                <div id="avatar-container" class="w-8 h-8 rounded-full overflow-hidden bg-gray-200"></div>
+                <span id="nav-username" class="text-xs font-bold text-gray-600">Sobat Aura</span>
+            </div>
+        </header>
+
+        <main class="pt-24 pb-24 px-4 md:px-8 max-w-7xl mx-auto">
+            
+            <div id="tab-home" class="page active">
+                <div class="masonry" id="feed-container"></div>
+            </div>
+
+            <div id="tab-ai" class="page hidden">
+                <div class="ai-box shadow-2xl">
+                    <div class="ai-header">
+                        <i data-lucide="sparkles"></i>
+                        <h2 class="text-xl font-bold">VisiAura AI Generator</h2>
+                    </div>
+                    <p class="ai-subtitle">Ubah imajinasimu menjadi visual aura yang nyata.</p>
+                    <textarea id="aiPrompt" placeholder="Contoh: Pemandangan kota cyber didalam sebuah bola kristal..."></textarea>
+                    <div class="ai-controls">
+                        <select id="aiStyle">
+                            <option value="cinematic">Cinematic 4K</option>
+                            <option value="anime">Anime Style</option>
+                            <option value="realistic">Realistic Photography</option>
+                        </select>
+                        <button onclick="startAiProcess()" class="btn-gen">Generate</button>
+                    </div>
+                    
+                    <div id="loadingOverlay" class="loading-overlay">
+                        <div class="spinner"></div>
+                        <p id="loadingText" class="text-sm font-bold text-red-500">Menganalisis Aura...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-chat" class="page hidden max-w-2xl mx-auto">
+                <div class="chat-window">
+                    <div class="chat-header">
+                        <i data-lucide="message-square" class="inline-block mr-2 w-5 h-5 text-red-500"></i>
+                        Diskusi Global
+                    </div>
+                    <div id="chat-box" class="chat-body no-scrollbar"></div>
+                    <div class="chat-footer">
+                        <input id="chat-input" type="text" placeholder="Ketik pesan positif...">
+                        <button onclick="sendMsg()"><i data-lucide="send"></i></button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <nav class="mobile-nav">
+            <button onclick="showSection('home')" id="nav-home" class="active"><i data-lucide="home"></i></button>
+            <button onclick="showSection('ai')" id="nav-ai" class="nav-plus"><i data-lucide="plus"></i></button>
+            <button onclick="showSection('chat')" id="nav-chat"><i data-lucide="message-circle"></i></button>
+            <button onclick="logout()"><i data-lucide="log-out" class="text-red-400"></i></button>
+        </nav>
     </div>
 
-    <nav class="mobile-nav">
-        <button onclick="showSection('dashboard')" id="nav-home" class="active"><i class="fas fa-home"></i></button>
-        <button onclick="showSection('generator')" class="nav-plus"><i class="fas fa-plus"></i></button>
-        <button onclick="showSection('chat')"><i class="fas fa-comment-dots"></i></button>
-    </nav>
-
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
 
