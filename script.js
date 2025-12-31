@@ -17,25 +17,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-provider.setCustomParameters({ prompt: 'select_account' });
-
 let currentUser = null;
 let pinsData = [];
-
-window.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    initOnboardingAnimation();
-    setupEventListeners();
-    generateMockPins(60);
-});
 
 function showMainApp(user) {
     currentUser = user;
     document.getElementById('onboarding').style.display = 'none';
     document.getElementById('app-main').style.display = 'block';
     document.getElementById('mobile-nav').classList.remove('hidden');
-    showToast(`Halo, ${user.displayName || 'User'}!`);
+    showToast(`Selamat Datang, ${user.displayName || user.email}`);
     initChatListener();
+    generateMockPins(60);
 }
 
 onAuthStateChanged(auth, (user) => {
@@ -50,59 +42,61 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function setupEventListeners() {
-    const googleBtn = document.getElementById('google-login');
-    if(googleBtn) {
-        googleBtn.onclick = async () => {
-            try {
-                const result = await signInWithPopup(auth, provider);
-                showMainApp(result.user);
-            } catch (err) {
-                console.error("Firebase Auth Error:", err.code);
-                if (err.code === 'auth/popup-blocked') {
-                    showToast("Popup diblokir browser!", "error");
-                } else if (err.code === 'auth/operation-not-allowed') {
-                    showToast("Aktifkan Google Auth di Console!", "error");
-                } else {
-                    showToast("Gagal login: " + err.message, "error");
-                }
+    document.getElementById('google-login').onclick = async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            
+        } catch (error) {
+            console.error("Error Google:", error.code);
+            if(error.code === 'auth/popup-blocked') {
+                showToast("Popup diblokir browser!", "error");
+            } else if(error.code === 'auth/operation-not-allowed') {
+                showToast("Aktifkan Google Login di Firebase!", "error");
+            } else {
+                showToast("Gagal Login Google", "error");
             }
-        };
-    }
+        }
+    };
 
     const loginBtn = document.querySelector('button.bg-black');
-    if(loginBtn) {
-        loginBtn.onclick = (e) => {
-            e.preventDefault();
-            const email = document.querySelector('input[type="email"]').value;
-            const pass = document.querySelector('input[type="password"]').value;
+    loginBtn.onclick = async (e) => {
+        e.preventDefault();
+        const email = document.querySelector('input[type="email"]').value;
+        const pass = document.querySelector('input[type="password"]').value;
 
-            if (email && pass.length >= 6) {
-                signInWithEmailAndPassword(auth, email, pass)
-                    .then(res => showMainApp(res.user))
-                    .catch(() => {
-                        
-                        showToast("Mode Demo Aktif");
-                        showMainApp({ email, displayName: "Member VisiAura", uid: "demo-user" });
-                    });
-            } else {
-                showToast("Email valid & sandi min. 6 karakter", "error");
+        if (email && pass.length >= 6) {
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                console.error("Error Login:", error.code);
+                if(error.code === 'auth/user-not-found') {
+                    showToast("Email belum terdaftar!", "error");
+                } else if(error.code === 'auth/wrong-password') {
+                    showToast("Sandi salah!", "error");
+                } else if(error.code === 'auth/invalid-credential') {
+                    showToast("Email/Sandi tidak valid!", "error");
+                } else {
+                    showToast("Gagal masuk. Cek akun Anda.", "error");
+                }
             }
-        };
-    }
-
+        } else {
+            showToast("Masukkan Email & Sandi (min. 6 karakter)", "error");
+        }
+    };
+    
     document.getElementById('logout-btn').onclick = () => {
         signOut(auth).then(() => {
-            location.reload();
+            showToast("Berhasil Keluar");
         });
     };
 
     document.querySelectorAll('.nav-link, [data-view]').forEach(btn => {
-        btn.onclick = (e) => {
-            const target = btn.getAttribute('data-view');
-            if (target) switchView(target);
+        btn.onclick = () => {
+            const viewId = btn.getAttribute('data-view');
+            if(viewId) switchView(viewId);
         };
     });
-
+    
     document.getElementById('main-search').oninput = (e) => filterPins(e.target.value);
     document.getElementById('generate-veo').onclick = startVeoGeneration;
     document.getElementById('send-btn').onclick = sendChatMessage;
@@ -111,157 +105,110 @@ function setupEventListeners() {
     document.getElementById('close-settings').onclick = () => toggleSettings(false);
 }
 
-function initOnboardingAnimation() {
-    const container = document.getElementById('floating-bg');
-    if (!container) return;
-    for(let i=0; i<45; i++) {
-        const card = document.createElement('div');
-        card.className = 'floating-card';
-        card.style.left = Math.random() * 90 + 'vw';
-        card.style.animationDelay = Math.random() * 5 + 's';
-        card.style.setProperty('--rot', (Math.random() * 30 - 15) + 'deg');
-        card.style.background = `url(https://picsum.photos/seed/${i+50}/200/300) center/cover`;
-        container.appendChild(card);
-    }
-}
-
-function switchView(viewId) {
-    if(viewId === 'profile') return toggleSettings(true);
-    
-    document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    
-    const target = document.getElementById(`view-${viewId}`);
-    if(target) target.classList.remove('hidden');
-    
-    document.querySelectorAll(`.nav-link[data-view="${viewId}"]`).forEach(l => l.classList.add('active'));
-}
-
 function generateMockPins(count) {
+    const grid = document.getElementById('masonry-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
     pinsData = [];
-    const categories = ['OOTD', 'Interior', 'Fotografi', 'Minimalis'];
+    const cats = ['OOTD', 'Art', 'Interior', 'Tech'];
     for(let i=0; i<count; i++) {
-        const h = [300, 400, 500, 350][Math.floor(Math.random() * 4)];
-        pinsData.push({
+        const pin = {
             id: i,
-            url: `https://picsum.photos/seed/visiaura${i}/${400}/${h}`,
-            title: `Aura Inspiring ${i+1}`,
-            category: categories[i % categories.length]
-        });
+            url: `https://picsum.photos/seed/aura${i}/${400}/${[300, 450, 550, 400][i%4]}`,
+            title: `Inspirasi Aura ${i+1}`,
+            category: cats[i%4]
+        };
+        pinsData.push(pin);
+        renderPin(pin);
     }
-    filterPins('');
 }
 
 function renderPin(pin) {
     const grid = document.getElementById('masonry-grid');
-    const card = document.createElement('div');
-    card.className = 'pin-card';
-    card.innerHTML = `
+    const div = document.createElement('div');
+    div.className = 'pin-card';
+    div.innerHTML = `
         <img src="${pin.url}" class="w-full h-auto">
         <div class="pin-overlay">
-            <div class="flex justify-end">
-                <button class="save-btn bg-[#E60023] text-white px-4 py-2 rounded-full font-bold text-[10px] shadow-lg">Simpan</button>
-            </div>
-            <div class="text-white">
-                <p class="text-[8px] font-black uppercase opacity-60">${pin.category}</p>
-                <h4 class="font-bold text-xs truncate">${pin.title}</h4>
-            </div>
+            <button class="ml-auto bg-[#E60023] text-white px-4 py-2 rounded-full font-bold text-[10px]">Simpan</button>
+            <div class="text-white"><p class="text-[8px] opacity-60 uppercase font-black">${pin.category}</p><h4 class="text-xs font-bold truncate">${pin.title}</h4></div>
         </div>
     `;
-    
-    card.querySelector('.save-btn').onclick = (e) => {
-        e.stopPropagation();
-        e.target.innerText = e.target.innerText === "Simpan" ? "Tersimpan" : "Simpan";
-        e.target.classList.toggle('bg-black');
-        showToast("Berhasil diperbarui");
-    };
-    
-    grid.appendChild(card);
+    grid.appendChild(div);
 }
 
 function filterPins(q) {
     const grid = document.getElementById('masonry-grid');
     if(!grid) return;
     grid.innerHTML = '';
-    pinsData.filter(p => p.title.toLowerCase().includes(q.toLowerCase()) || p.category.toLowerCase().includes(q.toLowerCase()))
-            .forEach(renderPin);
+    pinsData.filter(p => p.title.toLowerCase().includes(q.toLowerCase())).forEach(renderPin);
 }
 
-function toggleSettings(show) {
-    const panel = document.getElementById('settings-panel');
-    const content = document.getElementById('settings-content');
-    if(show) {
-        panel.classList.remove('hidden');
-        setTimeout(() => content.style.transform = 'translateY(0)', 10);
-    } else {
-        content.style.transform = 'translateY(100%)';
-        setTimeout(() => panel.classList.add('hidden'), 500);
-    }
+function switchView(id) {
+    if(id === 'profile') return toggleSettings(true);
+    document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(`view-${id}`).classList.remove('hidden');
+    document.querySelectorAll(`[data-view="${id}"]`).forEach(l => l.classList.add('active'));
+}
+
+function toggleSettings(s) {
+    const p = document.getElementById('settings-panel');
+    const c = document.getElementById('settings-content');
+    if(s) { p.classList.remove('hidden'); setTimeout(()=>c.style.transform='translateY(0)',10); }
+    else { c.style.transform='translateY(100%)'; setTimeout(()=>p.classList.add('hidden'),500); }
 }
 
 function startVeoGeneration() {
-    const container = document.getElementById('video-preview-container');
-    container.innerHTML = `
-        <div class="flex flex-col items-center">
-            <div class="infinity-loop mb-4"></div>
-            <p class="text-[8px] font-black tracking-[3px] text-red-500 animate-pulse">GENERATING VEO 3</p>
-        </div>
-    `;
+    const box = document.getElementById('video-preview-container');
+    box.innerHTML = `<div class="text-center"><div class="infinity-loop mx-auto mb-4"></div><p class="text-red-500 font-black text-[10px] animate-pulse">GENERATING VEO 3 VIDEO...</p></div>`;
     setTimeout(() => {
-        container.innerHTML = `
-            <video class="w-full h-full object-cover rounded-[40px]" autoplay loop muted>
-                <source src="https://cdn.pixabay.com/video/2021/08/05/84048-585324467_large.mp4" type="video/mp4">
-            </video>
-        `;
-        showToast("Video Selesai!");
+        box.innerHTML = `<video class="w-full h-full object-cover rounded-[30px]" autoplay loop muted><source src="https://cdn.pixabay.com/video/2021/08/05/84048-585324467_large.mp4"></video>`;
+        showToast("Video Estetik Selesai!");
     }, 4000);
 }
 
 function initChatListener() {
+    if(!currentUser) return;
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
-    onSnapshot(q, (snapshot) => {
-        const box = document.getElementById('chat-messages');
-        if(!box) return;
-        box.innerHTML = '';
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            const me = d.uid === currentUser.uid;
-            box.innerHTML += `
-                <div class="flex ${me ? 'justify-end' : 'justify-start'} mb-3">
-                    <div class="p-4 rounded-[20px] text-xs max-w-[70%] ${me ? 'bg-[#E60023] text-white rounded-br-none' : 'bg-white border rounded-bl-none'}">
-                        <p class="text-[7px] font-black opacity-50 mb-1">${d.sender}</p>
-                        ${d.text}
-                    </div>
-                </div>
-            `;
+    onSnapshot(q, (s) => {
+        const b = document.getElementById('chat-messages');
+        if(!b) return; b.innerHTML = '';
+        s.forEach(d => {
+            const m = d.data();
+            const me = m.uid === currentUser.uid;
+            b.innerHTML += `<div class="flex ${me ? 'justify-end' : 'justify-start'} mb-3"><div class="p-3 px-4 rounded-[20px] text-xs ${me?'bg-[#E60023] text-white rounded-br-none':'bg-white border rounded-bl-none'}">${m.text}</div></div>`;
         });
         box.scrollTop = box.scrollHeight;
-    }, () => console.log("Firestore limited. Chat mode local aktif."));
+    }, (e) => console.log("Izin Firestore Ditolak."));
 }
 
 async function sendChatMessage() {
-    const input = document.getElementById('chat-input');
-    if(!input.value.trim()) return;
-    try {
-        await addDoc(collection(db, "messages"), {
-            text: input.value,
-            uid: currentUser.uid,
-            sender: currentUser.displayName || "User",
-            timestamp: serverTimestamp()
-        });
-        input.value = '';
-    } catch(e) { showToast("Gagal kirim pesan", "error"); }
+    const i = document.getElementById('chat-input');
+    if(!i.value.trim() || !currentUser) return;
+    try { await addDoc(collection(db, "messages"), { text: i.value, uid: currentUser.uid, sender: currentUser.displayName || currentUser.email, timestamp: serverTimestamp() }); i.value = ''; }
+    catch(e) { showToast("Gagal kirim. Cek Firebase Rules.", "error"); }
 }
 
-function showToast(m, t = "success") {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast-pop mb-2';
-    toast.innerHTML = `<div class="p-3 bg-white/90 backdrop-blur rounded-2xl shadow-xl flex items-center gap-3 border border-gray-100">
-        <i data-lucide="${t === 'error' ? 'alert-triangle' : 'check'}" class="w-4 h-4 ${t === 'error' ? 'text-red-500' : 'text-green-500'}"></i>
-        <span class="text-[10px] font-bold text-gray-700 uppercase tracking-tight">${m}</span>
-    </div>`;
-    container.appendChild(toast);
-    lucide.createIcons();
-    setTimeout(() => toast.remove(), 4000);
-            }
+function showToast(m, t="success") {
+    const c = document.getElementById('toast-container');
+    const div = document.createElement('div');
+    div.className = 'toast-pop mb-2 p-3 bg-white shadow-xl rounded-2xl flex items-center gap-3 border text-[10px] font-bold uppercase';
+    div.innerHTML = `<i data-lucide="${t==='error'?'alert-circle':'check'}"></i> ${m}`;
+    c.appendChild(div); lucide.createIcons(); setTimeout(()=>div.remove(), 3000);
+}
+
+window.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); initOnboardingAnimation(); setupEventListeners(); });
+
+function initOnboardingAnimation() {
+    const b = document.getElementById('floating-bg');
+    if(!b) return;
+    for(let i=0; i<30; i++) {
+        const d = document.createElement('div');
+        d.className = 'floating-card';
+        d.style.left = (Math.random()*90)+'vw';
+        d.style.animationDelay = (i*0.5)+'s';
+        d.style.background = `url(https://picsum.photos/seed/bg${i}/200/300) center/cover`;
+        b.appendChild(d);
+    }
+}
