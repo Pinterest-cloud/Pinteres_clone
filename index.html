@@ -1,115 +1,333 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VisiAura - Image AI Generator</title>
-</head>
-<body class="text-gray-900 bg-[#FAFAFA]">
-    <!-- Loader Utama -->
-<div id="loader" class="fixed inset-0 z-[1000] bg-white flex items-center justify-center">
-    <div class="loader-circle"></div>
-</div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisiAura - OOTD & AI Art</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .masonry { column-count: 2; column-gap: 12px; }
+        @media (min-width: 768px) { .masonry { column-count: 3; } }
+        @media (min-width: 1024px) { .masonry { column-count: 5; } }
+        
+        .masonry-item { break-inside: avoid; margin-bottom: 12px; border-radius: 20px; overflow: hidden; background: #eee; transition: 0.3s; position: relative; animation: fadeIn 0.5s ease-out; }
+        .masonry-item img { width: 100%; display: block; transition: 0.5s; }
+        .masonry-item:hover img { transform: scale(1.05); }
+        
+        .cat-btn { padding: 8px 20px; border-radius: 50px; background: #f1f5f9; font-size: 11px; font-weight: 700; color: #64748b; transition: 0.3s; white-space: nowrap; border: 1px solid transparent; }
+        .cat-btn.active { background: #E60023; color: white; border-color: #E60023; box-shadow: 0 4px 12px rgba(230, 0, 35, 0.2); }
+        
+        .active-nav { color: #E60023 !important; }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .spinner { width: 28px; height: 28px; border: 3px solid #f3f3f3; border-top: 3px solid #E60023; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        
+        .toast-hidden { opacity: 0; transform: translate(-50%, 20px); pointer-events: none; }
+        .toast-visible { opacity: 1; transform: translate(-50%, 0); transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
 
-<!-- Section Login -->
-<section id="auth-section" class="fixed inset-0 z-[500] bg-white flex items-center justify-center p-6 hidden overflow-hidden">
-    <div id="floating-bg" class="absolute inset-0 pointer-events-none opacity-20"></div>
-    <div class="w-full max-w-sm text-center relative z-10 bg-white/80 backdrop-blur-sm p-8 rounded-[40px] shadow-2xl border border-white">
-        <div class="brand-logo mx-auto mb-6 shadow-xl">V</div>
-        <h1 class="text-3xl font-extrabold mb-2 tracking-tight">VisiAura</h1>
-        <p class="text-gray-400 mb-8 font-medium">Visualisasikan Aura Duniamu.</p>
-        
-        <button onclick="loginGoogle()" class="google-btn w-full bg-white border border-gray-100 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all mb-4 shadow-sm active:scale-95">
-            <img id="google-icon" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5 rounded-full" alt="Google">
-            Masuk dengan Google
-        </button>
-        
-        <div class="relative py-4">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
-            <span class="relative bg-white px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Atau Manual</span>
-        </div>
-        
-        <div class="space-y-3">
-            <input id="email-log" type="email" placeholder="Email Sobat" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all text-sm">
-            <input id="pass-log" type="password" placeholder="Sandi" class="w-full bg-gray-50 p-4 rounded-xl outline-none focus:ring-2 focus:ring-red-100 transition-all text-sm">
-            <button onclick="loginEmail()" class="w-full bg-[#E60023] text-white py-4 rounded-xl font-black shadow-lg active:scale-95 transition-all uppercase text-xs tracking-widest">Masuk</button>
+        .google-btn-icon { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+    </style>
+</head>
+<body class="bg-[#FAFAFA] text-gray-900 overflow-x-hidden">
+
+    <!-- Screen Loader -->
+    <div id="loader" class="fixed inset-0 z-[2000] bg-white flex items-center justify-center">
+        <div class="flex flex-col items-center gap-4">
+            <div class="spinner"></div>
+            <p class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Memuat VisiAura...</p>
         </div>
     </div>
-</section>
 
-<!-- Konten Utama -->
-<div id="app-content" class="hidden">
-    <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 px-6 py-4 flex items-center justify-between border-b border-gray-50">
-        <div class="flex items-center gap-2 cursor-pointer" onclick="showSection('home')">
-            <div class="w-8 h-8 bg-[#E60023] rounded-lg flex items-center justify-center text-white font-black italic text-sm">V</div>
-            <span class="font-bold tracking-tighter text-lg hidden sm:block">VisiAura</span>
-        </div>
-        
-        <div class="search-bar-mini flex flex-1 max-w-md mx-4 sm:mx-8">
-            <input type="text" id="searchInput" oninput="searchAura(event)" placeholder="Cari aura..." class="w-full bg-gray-100 border-none rounded-full px-6 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100">
-        </div>
-        
-        <div id="user-pill" class="flex items-center gap-3 bg-gray-50 p-1.5 pr-4 rounded-full cursor-pointer hover:bg-gray-100 transition-all">
-            <div id="avatar-container" class="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-white"></div>
-            <span id="nav-username" class="text-[10px] font-bold text-gray-600 truncate max-w-[80px]">Sobat Aura</span>
-        </div>
-    </header>
+    <!-- Auth Section -->
+    <section id="auth-section" class="fixed inset-0 z-[1000] bg-white flex items-center justify-center p-6 hidden">
+        <div class="w-full max-w-sm text-center">
+            <div class="w-20 h-20 bg-[#E60023] rounded-[24px] flex items-center justify-center text-white text-4xl font-black mx-auto mb-6 shadow-2xl italic transform -rotate-3">V</div>
+            <h1 class="text-4xl font-extrabold mb-2 tracking-tighter">VisiAura</h1>
+            <p class="text-gray-400 mb-10 font-medium">Inspirasi Gaya & Kreasi AI.</p>
+            
+            <button onclick="loginGoogle()" class="w-full bg-white border border-gray-200 py-4 rounded-2xl flex items-center justify-center gap-4 font-bold hover:shadow-md transition-all mb-6 active:scale-95 shadow-sm">
+                <!-- LOGO GOOGLE KUSTOM -->
+                <img id="google-logo-custom" src="https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056" class="google-btn-icon" alt="G">
+                <span class="text-gray-700">Lanjutkan dengan Google</span>
+            </button>
 
-    <main class="pt-36 pb-24 px-4 md:px-8 max-w-[1600px] mx-auto">
-        <div id="tab-home" class="page active">
-            <div class="masonry" id="feed-container"></div>
-        </div>
+            <div class="flex items-center gap-4 mb-6">
+                <div class="flex-1 h-[1px] bg-gray-100"></div>
+                <span class="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Atau</span>
+                <div class="flex-1 h-[1px] bg-gray-100"></div>
+            </div>
 
-        <div id="tab-ai" class="page hidden">
-            <div class="ai-box shadow-2xl">
-                <div class="ai-header">
-                    <i data-lucide="sparkles"></i>
-                    <h2 class="text-xl font-bold italic text-white">VisiAura Real AI Art</h2>
+            <div class="space-y-3">
+                <input id="email-log" type="email" placeholder="Email" class="w-full bg-gray-50 border border-transparent focus:border-red-200 p-4 rounded-2xl outline-none transition-all text-sm">
+                <input id="pass-log" type="password" placeholder="Kata Sandi" class="w-full bg-gray-50 border border-transparent focus:border-red-200 p-4 rounded-2xl outline-none transition-all text-sm">
+                <button onclick="loginEmail()" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all text-sm shadow-lg">MASUK</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- App Content -->
+    <div id="app-content" class="hidden">
+        <header class="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-xl z-50 border-b border-gray-100/50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2" onclick="switchTab('home')">
+                    <div class="w-8 h-8 bg-[#E60023] rounded-lg flex items-center justify-center text-white font-black italic text-sm">V</div>
+                    <span class="font-bold text-xl tracking-tighter">VisiAura</span>
                 </div>
-                <p class="ai-subtitle">Ketuk imajinasimu, AI akan melukisnya secara instan.</p>
-                <div class="space-y-4">
-                    <textarea id="aiPrompt" placeholder="Contoh: Kucing astronot..."></textarea>
-                    <div id="ai-result-container" class="hidden mb-4 overflow-hidden rounded-2xl bg-black aspect-video relative">
-                        <img id="aiResultImg" src="" class="w-full h-full object-cover">
-                        <button onclick="saveAiResult()" class="absolute bottom-4 right-4 bg-white/20 p-2 rounded-full"><i data-lucide="download"></i></button>
+                <div id="avatar-container" class="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100"></div>
+            </div>
+            
+            <div class="px-6 pb-4 overflow-x-auto no-scrollbar flex gap-2">
+                <button onclick="filterFeed('all')" class="cat-btn active">Semua</button>
+                <button onclick="filterFeed('ootd')" class="cat-btn">#OOTD</button>
+                <button onclick="filterFeed('street')" class="cat-btn">Streetwear</button>
+                <button onclick="filterFeed('ai')" class="cat-btn">AI Design</button>
+                <button onclick="filterFeed('minimal')" class="cat-btn">Minimalist</button>
+            </div>
+        </header>
+
+        <main class="pt-36 pb-28 px-4 max-w-7xl mx-auto">
+            <!-- Home Page -->
+            <div id="tab-home" class="page">
+                <div class="masonry" id="feed-container"></div>
+            </div>
+            
+            <!-- AI Designer -->
+            <div id="tab-ai" class="page hidden max-w-lg mx-auto bg-white p-8 rounded-[40px] shadow-2xl border border-gray-50">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="p-3 bg-red-50 rounded-2xl text-[#E60023]"><i data-lucide="sparkles"></i></div>
+                    <div>
+                        <h2 class="font-extrabold text-xl">AI Outfit Designer</h2>
+                        <p class="text-xs text-gray-400">Rancang aura pakaianmu sendiri.</p>
                     </div>
-                    <button id="btnGenerate" onclick="startRealAiProcess()" class="btn-gen w-full">BUAT GAMBAR</button>
                 </div>
-                <div id="loadingOverlay" class="loading-overlay">
-                    <div class="spinner-neon"></div>
-                    <p class="text-sm font-bold text-[#E60023] mt-4">Menenun Piksel Aura...</p>
+                <textarea id="aiPrompt" class="w-full bg-gray-50 p-5 rounded-3xl h-32 mb-4 outline-none border border-transparent focus:border-red-100 transition-all text-sm resize-none" placeholder="Contoh: Pria berjaket kulit hitam gaya grunge di jalanan London..."></textarea>
+                
+                <div id="ai-res-box" class="hidden mb-6 rounded-[30px] overflow-hidden shadow-inner bg-gray-50 border">
+                    <img id="aiResultImg" src="" class="w-full h-full object-cover">
                 </div>
-            </div>
-        </div>
 
-        <div id="tab-chat" class="page hidden max-w-2xl mx-auto">
-            <div class="chat-window">
-                <div class="chat-header">Diskusi Global</div>
-                <div id="chat-box" class="chat-body no-scrollbar"></div>
-                <div class="chat-footer">
-                    <input id="chat-input" type="text" placeholder="Ketik pesan...">
-                    <button onclick="sendMsg()"><i data-lucide="send"></i></button>
+                <button onclick="generateAI()" class="w-full bg-[#E60023] text-white py-5 rounded-[24px] font-bold shadow-xl shadow-red-200 active:scale-95 transition-all text-sm uppercase tracking-widest">WUJUDKAN DESAIN</button>
+                
+                <div id="ai-loading" class="hidden flex flex-col items-center mt-6">
+                    <div class="spinner"></div>
+                    <p class="text-[10px] font-black text-gray-300 mt-2 tracking-widest">MENJAHIT PIKSEL...</p>
                 </div>
             </div>
-        </div>
-    </main>
 
-    <nav class="mobile-nav">
-        <button onclick="showSection('home')" id="nav-home" class="active"><i data-lucide="home"></i></button>
-        <label for="gallery-upload" class="nav-plus cursor-pointer">
-            <i data-lucide="plus"></i>
-            <input type="file" id="gallery-upload" class="hidden" accept="image/*" onchange="uploadFromGallery(event)">
-        </label>
-        <button onclick="showSection('chat')" id="nav-chat"><i data-lucide="message-circle"></i></button>
-        <button onclick="logout()"><i data-lucide="log-out"></i></button>
-    </nav>
-</div>
+            <!-- Chat Page -->
+            <div id="tab-chat" class="page hidden max-w-md mx-auto h-[65vh] bg-white rounded-[40px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+                <div class="p-5 border-b flex items-center justify-between">
+                    <span class="font-extrabold text-sm tracking-widest uppercase">Community Chat</span>
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                </div>
+                <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar bg-gray-50/50"></div>
+                <div class="p-4 bg-white border-t flex gap-2 items-center">
+                    <input id="chat-in" class="flex-1 bg-gray-100 px-6 py-3 rounded-full outline-none text-sm focus:ring-2 focus:ring-red-500/10 transition-all" placeholder="Bagikan tip fashion...">
+                    <button onclick="sendChat()" class="bg-[#E60023] text-white p-3 rounded-full shadow-lg active:scale-90"><i data-lucide="send" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+        </main>
 
-<!-- Toast -->
-<div id="toast" class="toast-hidden">
-    <p id="toastMsg" class="text-xs font-bold text-gray-700"></p>
-</div>
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-xl px-10 py-4 rounded-full flex items-center gap-10 shadow-[0_20px_50px_rgba(0,0,0,0.1)] z-50 border border-gray-100">
+            <button onclick="switchTab('home')" id="nav-home" class="text-gray-400 active-nav hover:scale-110 transition-transform"><i data-lucide="layout-grid"></i></button>
+            <label class="bg-[#E60023] w-14 h-14 rounded-[22px] -mt-16 flex items-center justify-center cursor-pointer shadow-xl shadow-red-200 hover:scale-110 transition-all transform active:rotate-12">
+                <i data-lucide="camera" class="text-white w-6 h-6"></i>
+                <input type="file" class="hidden" accept="image/*" onchange="uploadImg(event)">
+            </label>
+            <button onclick="switchTab('ai')" id="nav-ai" class="text-gray-400 hover:scale-110 transition-transform"><i data-lucide="wand-2"></i></button>
+            <button onclick="switchTab('chat')" id="nav-chat" class="text-gray-400 hover:scale-110 transition-transform"><i data-lucide="message-circle"></i></button>
+            <button onclick="window.location.reload()" class="text-red-300 ml-2"><i data-lucide="log-out"></i></button>
+        </nav>
+    </div>
 
-<!-- JS Terpisah dengan type="module" -->
-<script type="module" src="script.js"></script>
+    <!-- Toast -->
+    <div id="toast" class="toast-hidden fixed bottom-28 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-3 rounded-full text-[10px] font-bold z-[3000] uppercase tracking-[0.2em] shadow-2xl"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // Konfigurasi Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAjy-TL1OIZcWoXafKpjjGP45tfbe1B5Sc",
+            authDomain: "visiauracl-8339a.firebaseapp.com",
+            projectId: "visiauracl-8339a",
+            storageBucket: "visiauracl-8339a.firebasestorage.app",
+            messagingSenderId: "780780435918",
+            appId: "1:780780435918:web:a66a8180324903126c139f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        const KUSTOM_LOGO = "https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056";
+        let allData = [];
+
+        // --- DAFTAR GAMBAR OOTD MANUAL ---
+        const DAFTAR_OOTD_MANUAL = [
+            { url: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800", tag: "ootd" },
+            { url: "https://images.unsplash.com/photo-1529139513055-07f909ef3d5c?q=80&w=800", tag: "street" },
+            { url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=800", tag: "minimal" },
+            { url: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=800", tag: "ootd" },
+            { url: "https://images.unsplash.com/photo-1539106609214-0d75556d337a?q=80&w=800", tag: "street" }
+        ];
+
+        window.loginGoogle = () => signInWithPopup(auth, provider).catch(() => showToast("Gagal Login"));
+        
+        window.loginEmail = () => {
+            const e = document.getElementById('email-log').value;
+            const p = document.getElementById('pass-log').value;
+            if(!e || !p) return showToast("Lengkapi form!");
+            signInWithEmailAndPassword(auth, e, p).catch(() => showToast("Gagal masuk."));
+        };
+
+        window.switchTab = (id) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`tab-${id}`).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
+            document.getElementById(`nav-${id}`)?.classList.add('active-nav');
+            lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.filterFeed = (cat) => {
+            document.querySelectorAll('.cat-btn').forEach(b => {
+                b.classList.remove('active');
+                if(b.innerText.toLowerCase().includes(cat) || (cat === 'all' && b.innerText === 'Semua')) b.classList.add('active');
+            });
+            const filtered = cat === 'all' ? allData : allData.filter(i => i.tag === cat);
+            render(filtered);
+        };
+
+        window.uploadImg = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                allData.unshift({ url: ev.target.result, tag: 'ootd' });
+                render(allData);
+                showToast("Postingan Terbit!");
+                switchTab('home');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.generateAI = async () => {
+            const p = document.getElementById('aiPrompt').value;
+            if(!p) return showToast("Tulis ide aura!");
+            
+            document.getElementById('ai-loading').classList.remove('hidden');
+            document.getElementById('ai-res-box').classList.add('hidden');
+            
+            const url = `https://pollinations.ai/p/${encodeURIComponent(p + " fashion photography editorial vogue high quality style") }?width=800&height=1200&nologo=true&seed=${Math.random()}`;
+            const img = document.getElementById('aiResultImg');
+            
+            img.src = url;
+            img.onload = () => {
+                document.getElementById('ai-res-box').classList.remove('hidden');
+                document.getElementById('ai-loading').classList.add('hidden');
+                allData.unshift({ url, tag: 'ai' });
+                showToast("Aura Diciptakan!");
+            };
+        };
+
+        window.sendChat = async () => {
+            const i = document.getElementById('chat-in');
+            if(!i.value.trim()) return;
+            await addDoc(collection(db, "aura_chat_v2"), {
+                text: i.value,
+                user: auth.currentUser.displayName || "User",
+                uid: auth.currentUser.uid,
+                createdAt: serverTimestamp()
+            });
+            i.value = '';
+        };
+
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m;
+            t.classList.add('toast-visible');
+            t.classList.remove('toast-hidden');
+            setTimeout(() => {
+                t.classList.remove('toast-visible');
+                t.classList.add('toast-hidden');
+            }, 3000);
+        }
+
+        function render(items) {
+            const c = document.getElementById('feed-container');
+            if(!c) return;
+            c.innerHTML = items.map(i => `
+                <div class="masonry-item">
+                    <img src="${i.url}" loading="lazy">
+                    <div class="absolute bottom-3 left-3 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[7px] text-white font-black uppercase tracking-widest border border-white/20">
+                        #${i.tag}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        onAuthStateChanged(auth, (u) => {
+            const loader = document.getElementById('loader');
+            if(u) {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('avatar-container').innerHTML = `<img src="${u.photoURL || KUSTOM_LOGO}" class="w-full h-full object-cover">`;
+                initApp();
+            } else {
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+            setTimeout(() => { if(loader) loader.style.display = 'none'; }, 1000);
+        });
+
+        function initApp() {
+            allData = [...DAFTAR_OOTD_MANUAL];
+            
+            // Tambah gambar acak tambahan
+            for(let i=0; i<40; i++) {
+                const tag = ['ootd', 'street', 'minimal', 'ai'][i % 4];
+                allData.push({ 
+                    url: `https://picsum.photos/seed/${i + 888}/400/${tag === 'ootd' ? 600 : 450}`, 
+                    tag 
+                });
+            }
+            
+            render(allData);
+
+            // Listen Chat
+            onSnapshot(query(collection(db, "aura_chat_v2"), orderBy("createdAt", "asc")), (s) => {
+                const b = document.getElementById('chat-box');
+                if(!b) return;
+                b.innerHTML = '';
+                s.forEach(d => {
+                    const data = d.data();
+                    const isMe = data.uid === auth.currentUser?.uid;
+                    b.innerHTML += `
+                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                            <div class="${isMe ? 'bg-red-500 text-white shadow-red-100' : 'bg-white text-gray-800 shadow-sm'} px-4 py-2.5 rounded-[22px] max-w-[85%] shadow-md border border-gray-100/10">
+                                <p class="text-[8px] font-bold opacity-60 mb-1 uppercase tracking-tighter">${data.user}</p>
+                                <p class="leading-relaxed text-sm">${data.text}</p>
+                            </div>
+                        </div>`;
+                });
+                b.scrollTop = b.scrollHeight;
+            });
+            lucide.createIcons();
+        }
+    </script>
 </body>
 </html>
+
