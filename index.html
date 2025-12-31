@@ -3,18 +3,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VisiAura - Image AI Generator</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-
-<link rel="stylesheet" href="style.css">
 </head>
 <body class="text-gray-900 bg-[#FAFAFA]">
-    
+    <!-- Loader Utama -->
 <div id="loader" class="fixed inset-0 z-[1000] bg-white flex items-center justify-center">
     <div class="loader-circle"></div>
 </div>
 
+<!-- Section Login -->
 <section id="auth-section" class="fixed inset-0 z-[500] bg-white flex items-center justify-center p-6 hidden overflow-hidden">
     <div id="floating-bg" class="absolute inset-0 pointer-events-none opacity-20"></div>
     <div class="w-full max-w-sm text-center relative z-10 bg-white/80 backdrop-blur-sm p-8 rounded-[40px] shadow-2xl border border-white">
@@ -23,7 +19,7 @@
         <p class="text-gray-400 mb-8 font-medium">Visualisasikan Aura Duniamu.</p>
         
         <button onclick="loginGoogle()" class="google-btn w-full bg-white border border-gray-100 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all mb-4 shadow-sm active:scale-95">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5 rounded-full" alt="Google">
+            <img id="google-icon" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5 rounded-full" alt="Google">
             Masuk dengan Google
         </button>
         
@@ -40,8 +36,8 @@
     </div>
 </section>
 
+<!-- Konten Utama -->
 <div id="app-content" class="hidden">
-    
     <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 px-6 py-4 flex items-center justify-between border-b border-gray-50">
         <div class="flex items-center gap-2 cursor-pointer" onclick="showSection('home')">
             <div class="w-8 h-8 bg-[#E60023] rounded-lg flex items-center justify-center text-white font-black italic text-sm">V</div>
@@ -58,17 +54,6 @@
         </div>
     </header>
 
-    <div class="fixed top-[72px] left-0 right-0 bg-white/80 backdrop-blur-md z-40 py-3 border-b border-gray-50 overflow-x-auto no-scrollbar scroll-smooth">
-        <div class="flex items-center gap-3 px-6 whitespace-nowrap">
-            <button class="cat-pill active">Semua</button>
-            <button class="cat-pill">AI Art</button>
-            <button class="cat-pill">Fotografi</button>
-            <button class="cat-pill">Interior</button>
-            <button class="cat-pill">Cyberpunk</button>
-            <button class="cat-pill">Anime</button>
-        </div>
-    </div>
-
     <main class="pt-36 pb-24 px-4 md:px-8 max-w-[1600px] mx-auto">
         <div id="tab-home" class="page active">
             <div class="masonry" id="feed-container"></div>
@@ -81,62 +66,50 @@
                     <h2 class="text-xl font-bold italic text-white">VisiAura Real AI Art</h2>
                 </div>
                 <p class="ai-subtitle">Ketuk imajinasimu, AI akan melukisnya secara instan.</p>
-                
                 <div class="space-y-4">
-                    <textarea id="aiPrompt" placeholder="Contoh: Kucing astronot di planet mars, gaya lukisan van gogh..."></textarea>
-                    
-                    <div id="ai-result-container" class="hidden mb-4 overflow-hidden rounded-2xl border-4 border-[#E60023]/20 bg-black aspect-video relative">
-                        <img id="aiResultImg" src="" alt="Hasil AI" class="w-full h-full object-cover">
-                        <div class="absolute bottom-4 right-4 flex gap-2">
-                            <button onclick="saveAiResult()" class="bg-white/20 backdrop-blur-md text-white p-2 rounded-full hover:bg-white/40"><i data-lucide="download" class="w-4 h-4"></i></button>
-                        </div>
+                    <textarea id="aiPrompt" placeholder="Contoh: Kucing astronot..."></textarea>
+                    <div id="ai-result-container" class="hidden mb-4 overflow-hidden rounded-2xl bg-black aspect-video relative">
+                        <img id="aiResultImg" src="" class="w-full h-full object-cover">
+                        <button onclick="saveAiResult()" class="absolute bottom-4 right-4 bg-white/20 p-2 rounded-full"><i data-lucide="download"></i></button>
                     </div>
-
-                    <button id="btnGenerate" onclick="startRealAiProcess()" class="btn-gen w-full flex items-center justify-center gap-2">
-                        <span>BUAT GAMBAR</span>
-                        <i data-lucide="wand-2" class="w-4 h-4"></i>
-                    </button>
+                    <button id="btnGenerate" onclick="startRealAiProcess()" class="btn-gen w-full">BUAT GAMBAR</button>
                 </div>
-                
                 <div id="loadingOverlay" class="loading-overlay">
                     <div class="spinner-neon"></div>
-                    <p id="loadingText" class="text-sm font-bold text-[#E60023] mt-4">Menenun Piksel Aura...</p>
+                    <p class="text-sm font-bold text-[#E60023] mt-4">Menenun Piksel Aura...</p>
                 </div>
             </div>
         </div>
 
         <div id="tab-chat" class="page hidden max-w-2xl mx-auto">
-            <div class="chat-window shadow-xl">
+            <div class="chat-window">
                 <div class="chat-header">Diskusi Global</div>
                 <div id="chat-box" class="chat-body no-scrollbar"></div>
                 <div class="chat-footer">
                     <input id="chat-input" type="text" placeholder="Ketik pesan...">
-                    <button onclick="sendMsg()"><i data-lucide="send" class="w-4 h-4"></i></button>
+                    <button onclick="sendMsg()"><i data-lucide="send"></i></button>
                 </div>
             </div>
         </div>
     </main>
 
-    <div id="toast" class="toast-hidden">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-[#E60023] rounded-full flex items-center justify-center text-white text-[10px] font-bold">V</div>
-            <p id="toastMsg" class="text-xs font-bold text-gray-700"></p>
-        </div>
-    </div>
-
     <nav class="mobile-nav">
         <button onclick="showSection('home')" id="nav-home" class="active"><i data-lucide="home"></i></button>
-        
         <label for="gallery-upload" class="nav-plus cursor-pointer">
             <i data-lucide="plus"></i>
             <input type="file" id="gallery-upload" class="hidden" accept="image/*" onchange="uploadFromGallery(event)">
         </label>
-
         <button onclick="showSection('chat')" id="nav-chat"><i data-lucide="message-circle"></i></button>
-        <button onclick="logout()"><i data-lucide="log-out" class="text-red-400"></i></button>
+        <button onclick="logout()"><i data-lucide="log-out"></i></button>
     </nav>
 </div>
 
+<!-- Toast -->
+<div id="toast" class="toast-hidden">
+    <p id="toastMsg" class="text-xs font-bold text-gray-700"></p>
+</div>
+
+<!-- JS Terpisah dengan type="module" -->
 <script type="module" src="script.js"></script>
 </body>
 </html>
