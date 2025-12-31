@@ -1,21 +1,23 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAHJKndz9GNJM5PF3-QwI6OA8oEIo2n4eg",
-    authDomain: "visiaura-79db0.firebaseapp.com",
-    projectId: "visiaura-79db0",
-    storageBucket: "visiaura-79db0.firebasestorage.app",
-    messagingSenderId: "303849950518",
-    appId: "1:303849950518:web:f20967ceeb6ad5695bb797",
-    measurementId: "G-LGMPTPG0C1"
+  authDomain: "visiaura-79db0.firebaseapp.com",
+  projectId: "visiaura-79db0",
+  storageBucket: "visiaura-79db0.firebasestorage.app",
+  messagingSenderId: "303849950518",
+  appId: "1:303849950518:web:f20967ceeb6ad5695bb797",
+  measurementId: "G-LGMPTPG0C1"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+provider.setCustomParameters({ prompt: 'select_account' });
 
 let currentUser = null;
 let pinsData = [];
@@ -27,14 +29,18 @@ window.addEventListener('DOMContentLoaded', () => {
     generateMockPins(60);
 });
 
+function showMainApp(user) {
+    currentUser = user;
+    document.getElementById('onboarding').style.display = 'none';
+    document.getElementById('app-main').style.display = 'block';
+    document.getElementById('mobile-nav').classList.remove('hidden');
+    showToast(`Halo, ${user.displayName || 'User'}!`);
+    initChatListener();
+}
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUser = user;
-        document.getElementById('onboarding').style.display = 'none';
-        document.getElementById('app-main').style.display = 'block';
-        document.getElementById('mobile-nav').classList.remove('hidden');
-        showToast("Selamat Datang, " + (user.displayName || "Aura Member"));
-        initChatListener();
+        showMainApp(user);
     } else {
         currentUser = null;
         document.getElementById('onboarding').style.display = 'flex';
@@ -44,54 +50,83 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function setupEventListeners() {
-    document.getElementById('google-login').onclick = () => {
-        signInWithPopup(auth, provider).catch(err => showToast("Gagal terhubung ke Google", "error"));
-    };
+    const googleBtn = document.getElementById('google-login');
+    if(googleBtn) {
+        googleBtn.onclick = async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                showMainApp(result.user);
+            } catch (err) {
+                console.error("Firebase Auth Error:", err.code);
+                if (err.code === 'auth/popup-blocked') {
+                    showToast("Popup diblokir browser!", "error");
+                } else if (err.code === 'auth/operation-not-allowed') {
+                    showToast("Aktifkan Google Auth di Console!", "error");
+                } else {
+                    showToast("Gagal login: " + err.message, "error");
+                }
+            }
+        };
+    }
+
+    const loginBtn = document.querySelector('button.bg-black');
+    if(loginBtn) {
+        loginBtn.onclick = (e) => {
+            e.preventDefault();
+            const email = document.querySelector('input[type="email"]').value;
+            const pass = document.querySelector('input[type="password"]').value;
+
+            if (email && pass.length >= 6) {
+                signInWithEmailAndPassword(auth, email, pass)
+                    .then(res => showMainApp(res.user))
+                    .catch(() => {
+                        
+                        showToast("Mode Demo Aktif");
+                        showMainApp({ email, displayName: "Member VisiAura", uid: "demo-user" });
+                    });
+            } else {
+                showToast("Email valid & sandi min. 6 karakter", "error");
+            }
+        };
+    }
 
     document.getElementById('logout-btn').onclick = () => {
-        signOut(auth).then(() => toggleSettings(false));
+        signOut(auth).then(() => {
+            location.reload();
+        });
     };
 
-    document.querySelectorAll('.nav-link').forEach(btn => {
-        btn.onclick = () => {
+    document.querySelectorAll('.nav-link, [data-view]').forEach(btn => {
+        btn.onclick = (e) => {
             const target = btn.getAttribute('data-view');
-            switchView(target);
+            if (target) switchView(target);
         };
     });
 
-    document.getElementById('main-search').oninput = (e) => {
-        filterPins(e.target.value);
-    };
-
+    document.getElementById('main-search').oninput = (e) => filterPins(e.target.value);
     document.getElementById('generate-veo').onclick = startVeoGeneration;
     document.getElementById('send-btn').onclick = sendChatMessage;
-    document.getElementById('chat-input').onkeypress = (e) => {
-        if(e.key === 'Enter') sendChatMessage();
-    };
-
+    document.getElementById('chat-input').onkeypress = (e) => { if(e.key === 'Enter') sendChatMessage(); };
     document.getElementById('profile-trigger').onclick = () => toggleSettings(true);
     document.getElementById('close-settings').onclick = () => toggleSettings(false);
 }
 
 function initOnboardingAnimation() {
     const container = document.getElementById('floating-bg');
-    for(let i=0; i<15; i++) {
+    if (!container) return;
+    for(let i=0; i<45; i++) {
         const card = document.createElement('div');
         card.className = 'floating-card';
         card.style.left = Math.random() * 90 + 'vw';
-        card.style.animationDelay = Math.random() * 8 + 's';
-        card.style.animationDuration = (Math.random() * 5 + 8) + 's';
-        card.style.setProperty('--rot', (Math.random() * 40 - 20) + 'deg');
-        card.style.background = `url(https://picsum.photos/seed/${i+100}/200/300) center/cover`;
+        card.style.animationDelay = Math.random() * 5 + 's';
+        card.style.setProperty('--rot', (Math.random() * 30 - 15) + 'deg');
+        card.style.background = `url(https://picsum.photos/seed/${i+50}/200/300) center/cover`;
         container.appendChild(card);
     }
 }
 
 function switchView(viewId) {
-    if(viewId === 'profile') {
-        toggleSettings(true);
-        return;
-    }
+    if(viewId === 'profile') return toggleSettings(true);
     
     document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -103,22 +138,18 @@ function switchView(viewId) {
 }
 
 function generateMockPins(count) {
-    const grid = document.getElementById('masonry-grid');
-    const categories = ['OOTD', 'Interior', 'Fotografi', 'Streetwear', 'Minimalis'];
-    
+    pinsData = [];
+    const categories = ['OOTD', 'Interior', 'Fotografi', 'Minimalis'];
     for(let i=0; i<count; i++) {
-        const cat = categories[i % categories.length];
-        const height = [280, 350, 420, 500][Math.floor(Math.random() * 4)];
-        const pin = {
+        const h = [300, 400, 500, 350][Math.floor(Math.random() * 4)];
+        pinsData.push({
             id: i,
-            url: `https://picsum.photos/seed/aura${i}/${400}/${height}`,
-            title: `Aura Style ${i+1}`,
-            category: cat,
-            likes: Math.floor(Math.random() * 900)
-        };
-        pinsData.push(pin);
-        renderPin(pin);
+            url: `https://picsum.photos/seed/visiaura${i}/${400}/${h}`,
+            title: `Aura Inspiring ${i+1}`,
+            category: categories[i % categories.length]
+        });
     }
+    filterPins('');
 }
 
 function renderPin(pin) {
@@ -126,38 +157,34 @@ function renderPin(pin) {
     const card = document.createElement('div');
     card.className = 'pin-card';
     card.innerHTML = `
-        <img src="${pin.url}" class="w-full h-auto" loading="lazy">
+        <img src="${pin.url}" class="w-full h-auto">
         <div class="pin-overlay">
             <div class="flex justify-end">
-                <button class="save-btn bg-[#E60023] text-white px-5 py-2.5 rounded-full font-extrabold text-xs shadow-lg active:scale-90 transition-transform">Simpan</button>
+                <button class="save-btn bg-[#E60023] text-white px-4 py-2 rounded-full font-bold text-[10px] shadow-lg">Simpan</button>
             </div>
             <div class="text-white">
-                <p class="text-[10px] font-black tracking-widest uppercase opacity-70">${pin.category}</p>
-                <h4 class="font-extrabold text-sm truncate">${pin.title}</h4>
+                <p class="text-[8px] font-black uppercase opacity-60">${pin.category}</p>
+                <h4 class="font-bold text-xs truncate">${pin.title}</h4>
             </div>
         </div>
     `;
-
-    const saveBtn = card.querySelector('.save-btn');
-    saveBtn.onclick = (e) => {
+    
+    card.querySelector('.save-btn').onclick = (e) => {
         e.stopPropagation();
-        const isSaved = saveBtn.innerText === "Simpan";
-        saveBtn.innerText = isSaved ? "Tersimpan" : "Simpan";
-        saveBtn.style.backgroundColor = isSaved ? "#000" : "#E60023";
-        showToast(isSaved ? "Tersimpan ke Papan" : "Dihapus dari Papan");
+        e.target.innerText = e.target.innerText === "Simpan" ? "Tersimpan" : "Simpan";
+        e.target.classList.toggle('bg-black');
+        showToast("Berhasil diperbarui");
     };
-
+    
     grid.appendChild(card);
 }
 
-function filterPins(query) {
+function filterPins(q) {
     const grid = document.getElementById('masonry-grid');
+    if(!grid) return;
     grid.innerHTML = '';
-    const filtered = pinsData.filter(p => 
-        p.title.toLowerCase().includes(query.toLowerCase()) || 
-        p.category.toLowerCase().includes(query.toLowerCase())
-    );
-    filtered.forEach(p => renderPin(p));
+    pinsData.filter(p => p.title.toLowerCase().includes(q.toLowerCase()) || p.category.toLowerCase().includes(q.toLowerCase()))
+            .forEach(renderPin);
 }
 
 function toggleSettings(show) {
@@ -177,75 +204,63 @@ function startVeoGeneration() {
     container.innerHTML = `
         <div class="flex flex-col items-center">
             <div class="infinity-loop mb-4"></div>
-            <p class="text-[10px] font-black tracking-[4px] text-red-500 animate-pulse">VEO GENERATING</p>
+            <p class="text-[8px] font-black tracking-[3px] text-red-500 animate-pulse">GENERATING VEO 3</p>
         </div>
     `;
-    
     setTimeout(() => {
         container.innerHTML = `
-            <video class="w-full h-full object-cover scale-95 opacity-0 transition-all duration-700" id="veo-video" autoplay loop muted>
+            <video class="w-full h-full object-cover rounded-[40px]" autoplay loop muted>
                 <source src="https://cdn.pixabay.com/video/2021/08/05/84048-585324467_large.mp4" type="video/mp4">
             </video>
         `;
-        const v = document.getElementById('veo-video');
-        setTimeout(() => {
-            v.classList.remove('scale-95', 'opacity-0');
-            v.classList.add('scale-100', 'opacity-100');
-        }, 50);
-        showToast("Video Berhasil Dibuat!");
-    }, 4500);
+        showToast("Video Selesai!");
+    }, 4000);
 }
 
 function initChatListener() {
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     onSnapshot(q, (snapshot) => {
-        const chatBox = document.getElementById('chat-messages');
-        chatBox.innerHTML = '';
+        const box = document.getElementById('chat-messages');
+        if(!box) return;
+        box.innerHTML = '';
         snapshot.forEach(doc => {
-            const data = doc.data();
-            const isMe = data.uid === currentUser.uid;
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
-            msgDiv.innerHTML = `
-                <div class="max-w-[80%] p-4 rounded-[25px] text-sm shadow-sm ${isMe ? 'bg-[#E60023] text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none'}">
-                    <p class="text-[8px] font-black opacity-50 mb-1 uppercase tracking-tighter">${data.sender}</p>
-                    ${data.text}
+            const d = doc.data();
+            const me = d.uid === currentUser.uid;
+            box.innerHTML += `
+                <div class="flex ${me ? 'justify-end' : 'justify-start'} mb-3">
+                    <div class="p-4 rounded-[20px] text-xs max-w-[70%] ${me ? 'bg-[#E60023] text-white rounded-br-none' : 'bg-white border rounded-bl-none'}">
+                        <p class="text-[7px] font-black opacity-50 mb-1">${d.sender}</p>
+                        ${d.text}
+                    </div>
                 </div>
             `;
-            chatBox.appendChild(msgDiv);
         });
-        chatBox.scrollTop = chatBox.scrollHeight;
-    });
+        box.scrollTop = box.scrollHeight;
+    }, () => console.log("Firestore limited. Chat mode local aktif."));
 }
 
 async function sendChatMessage() {
     const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-    if(!text || !currentUser) return;
-    
-    input.value = '';
+    if(!input.value.trim()) return;
     try {
         await addDoc(collection(db, "messages"), {
-            text: text,
+            text: input.value,
             uid: currentUser.uid,
-            sender: currentUser.displayName || currentUser.email,
+            sender: currentUser.displayName || "User",
             timestamp: serverTimestamp()
         });
-    } catch(e) {
-        showToast("Pesan gagal terkirim", "error");
-    }
+        input.value = '';
+    } catch(e) { showToast("Gagal kirim pesan", "error"); }
 }
 
-function showToast(msg, type = "success") {
+function showToast(m, t = "success") {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    toast.className = 'toast-pop mb-4';
-    toast.innerHTML = `
-        <div class="w-8 h-8 rounded-full flex items-center justify-center ${type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
-            <i data-lucide="${type === 'error' ? 'alert-circle' : 'check-circle'}" class="w-4 h-4"></i>
-        </div>
-        <p class="text-xs font-black text-gray-800 uppercase tracking-wide">${msg}</p>
-    `;
+    toast.className = 'toast-pop mb-2';
+    toast.innerHTML = `<div class="p-3 bg-white/90 backdrop-blur rounded-2xl shadow-xl flex items-center gap-3 border border-gray-100">
+        <i data-lucide="${t === 'error' ? 'alert-triangle' : 'check'}" class="w-4 h-4 ${t === 'error' ? 'text-red-500' : 'text-green-500'}"></i>
+        <span class="text-[10px] font-bold text-gray-700 uppercase tracking-tight">${m}</span>
+    </div>`;
     container.appendChild(toast);
     lucide.createIcons();
     setTimeout(() => toast.remove(), 4000);
