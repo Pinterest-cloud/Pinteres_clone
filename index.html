@@ -1,4 +1,4 @@
-​<html lang="id">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -6,10 +6,11 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="text-gray-900 bg-[#FAFAFA]">
-
+    
 <div id="loader" class="fixed inset-0 z-[1000] bg-white flex items-center justify-center">
     <div class="loader-circle"></div>
 </div>
@@ -21,8 +22,8 @@
         <h1 class="text-3xl font-extrabold mb-2 tracking-tight">VisiAura</h1>
         <p class="text-gray-400 mb-8 font-medium">Visualisasikan Aura Duniamu.</p>
         
-        <button onclick="loginGoogle()" class="w-full bg-white border border-gray-100 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all mb-4 shadow-sm active:scale-95">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5" alt="Google">
+        <button onclick="loginGoogle()" class="google-btn w-full bg-white border border-gray-100 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all mb-4 shadow-sm active:scale-95">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5 rounded-full" alt="Google">
             Masuk dengan Google
         </button>
         
@@ -40,14 +41,15 @@
 </section>
 
 <div id="app-content" class="hidden">
+    
     <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 px-6 py-4 flex items-center justify-between border-b border-gray-50">
         <div class="flex items-center gap-2 cursor-pointer" onclick="showSection('home')">
             <div class="w-8 h-8 bg-[#E60023] rounded-lg flex items-center justify-center text-white font-black italic text-sm">V</div>
             <span class="font-bold tracking-tighter text-lg hidden sm:block">VisiAura</span>
         </div>
         
-        <div class="search-bar-mini hidden md:flex flex-1 max-w-md mx-8">
-            <input type="text" id="searchInput" onkeyup="searchAura()" placeholder="Cari aura..." class="w-full bg-gray-100 border-none rounded-full px-6 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100">
+        <div class="search-bar-mini flex flex-1 max-w-md mx-4 sm:mx-8">
+            <input type="text" id="searchInput" oninput="searchAura(event)" placeholder="Cari aura..." class="w-full bg-gray-100 border-none rounded-full px-6 py-2 text-sm outline-none focus:ring-2 focus:ring-red-100">
         </div>
         
         <div id="user-pill" class="flex items-center gap-3 bg-gray-50 p-1.5 pr-4 rounded-full cursor-pointer hover:bg-gray-100 transition-all">
@@ -83,7 +85,6 @@
                 <div class="space-y-4">
                     <textarea id="aiPrompt" placeholder="Contoh: Kucing astronot di planet mars, gaya lukisan van gogh..."></textarea>
                     
-                    <!-- Area Hasil Gambar -->
                     <div id="ai-result-container" class="hidden mb-4 overflow-hidden rounded-2xl border-4 border-[#E60023]/20 bg-black aspect-video relative">
                         <img id="aiResultImg" src="" alt="Hasil AI" class="w-full h-full object-cover">
                         <div class="absolute bottom-4 right-4 flex gap-2">
@@ -105,7 +106,7 @@
         </div>
 
         <div id="tab-chat" class="page hidden max-w-2xl mx-auto">
-            <div class="chat-window">
+            <div class="chat-window shadow-xl">
                 <div class="chat-header">Diskusi Global</div>
                 <div id="chat-box" class="chat-body no-scrollbar"></div>
                 <div class="chat-footer">
@@ -125,10 +126,17 @@
 
     <nav class="mobile-nav">
         <button onclick="showSection('home')" id="nav-home" class="active"><i data-lucide="home"></i></button>
-        <button onclick="showSection('ai')" id="nav-ai" class="nav-plus"><i data-lucide="plus"></i></button>
+        
+        <label for="gallery-upload" class="nav-plus cursor-pointer">
+            <i data-lucide="plus"></i>
+            <input type="file" id="gallery-upload" class="hidden" accept="image/*" onchange="uploadFromGallery(event)">
+        </label>
+
         <button onclick="showSection('chat')" id="nav-chat"><i data-lucide="message-circle"></i></button>
         <button onclick="logout()"><i data-lucide="log-out" class="text-red-400"></i></button>
     </nav>
 </div>
 
 <script type="module" src="script.js"></script>
+</body>
+</html>
