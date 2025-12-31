@@ -1,25 +1,24 @@
-Pinterest Clone
+✨ VisiAura - Pinterest Style Aesthetic Platform
 
-A web application that replicates the Pinterest experience. 
-Built with HTML, CSS, and JavaScript.
+​VisiAura adalah platform eksplorasi visual yang menggabungkan estetika Pinterest dengan teknologi video masa depan menggunakan integrasi Google Veo 3.
 
-Features:
-pencarian gambar : memudahkan untuk mencari setiap gambar yang ada 
-tampilan minimalis : desain simple ramah device 
+​🚀 Fitur Utama
+​Google Login & Firebase Auth: Keamanan akses akun pengguna.
+​Masonry Layout: Grid dinamis yang responsif untuk 30+ inspirasi harian.
+​Google Veo 3 Module: Generator video futuristik dengan antarmuka Glassmorphism.
+​Real-time Chat: Komunikasi instan antar pengguna menggunakan Firestore.
+​Dreamy UI: Animasi kartu melayang dan transisi halaman yang halus.
 
-Interactions: Like button and commenting system.
-Opsi 2: Santai & To the Point 
-🎨 My Pinterest update gallery 
-tunjukkan setiap kegagalan pasti akan berhasil 
+​🛠️ Teknologi
+​Frontend: HTML5, Tailwind CSS, JavaScript (ES6+)
+​Backend: Firebase (Authentication, Firestore)
+​Icons: Lucide Icons
+​Animations: CSS Keyframes & Framer Motion logic
 
-proyek koding
-Cari gambar apa saja otomatis muncul.
-Bisa kasih komentar di setiap foto.
-Tampilan grid rapi ala Pinterest asli.
-Opsi 3: Versi "Developer" (Singkat saja & Padat)
-Pinterest-Cloud Project
-Simple Pinterest clone using Unsplash API.
+📝 Catatan Instalasi
+Jika Anda melakukan fork repositori ini, pastikan untuk:
+Mengonfigurasi firebaseConfig di file javascript.js dengan kunci API milik Anda sendiri.
+Menambahkan domain GitHub Pages Anda ke Authorized Domains di Firebase Console.
+Mengaktifkan Google Sign-in pada tab Authentication di Firebase.
 
-Pinterest clone using Unsplash ATech: HTML, CSS, javascript 
-
-Developer : Xeon
+STATUS : 🟥
