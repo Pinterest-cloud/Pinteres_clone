@@ -38,7 +38,6 @@
 </head>
 <body class="bg-[#FAFAFA] text-gray-900 overflow-x-hidden">
 
-    <!-- Screen Loader -->
     <div id="loader" class="fixed inset-0 z-[2000] bg-white flex items-center justify-center">
         <div class="flex flex-col items-center gap-4">
             <div class="spinner"></div>
@@ -46,7 +45,6 @@
         </div>
     </div>
 
-    <!-- Auth Section -->
     <section id="auth-section" class="fixed inset-0 z-[1000] bg-white flex items-center justify-center p-6 hidden">
         <div class="w-full max-w-sm text-center">
             <div class="w-20 h-20 bg-[#E60023] rounded-[24px] flex items-center justify-center text-white text-4xl font-black mx-auto mb-6 shadow-2xl italic transform -rotate-3">V</div>
@@ -54,7 +52,6 @@
             <p class="text-gray-400 mb-10 font-medium">Inspirasi Gaya & Kreasi AI.</p>
             
             <button onclick="loginGoogle()" class="w-full bg-white border border-gray-200 py-4 rounded-2xl flex items-center justify-center gap-4 font-bold hover:shadow-md transition-all mb-6 active:scale-95 shadow-sm">
-                <!-- LOGO GOOGLE KUSTOM -->
                 <img id="google-logo-custom" src="https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056" class="google-btn-icon" alt="G">
                 <span class="text-gray-700">Lanjutkan dengan Google</span>
             </button>
@@ -73,7 +70,6 @@
         </div>
     </section>
 
-    <!-- App Content -->
     <div id="app-content" class="hidden">
         <header class="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-xl z-50 border-b border-gray-100/50">
             <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -94,18 +90,16 @@
         </header>
 
         <main class="pt-36 pb-28 px-4 max-w-7xl mx-auto">
-            <!-- Home Page -->
             <div id="tab-home" class="page">
                 <div class="masonry" id="feed-container"></div>
             </div>
             
-            <!-- AI Designer -->
             <div id="tab-ai" class="page hidden max-w-lg mx-auto bg-white p-8 rounded-[40px] shadow-2xl border border-gray-50">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="p-3 bg-red-50 rounded-2xl text-[#E60023]"><i data-lucide="sparkles"></i></div>
                     <div>
                         <h2 class="font-extrabold text-xl">AI Outfit Designer</h2>
-                        <p class="text-xs text-gray-400">Rancang aura pakaianmu sendiri.</p>
+                        <p class="text-xs text-gray-400">Rancang auramu sendiri.</p>
                     </div>
                 </div>
                 <textarea id="aiPrompt" class="w-full bg-gray-50 p-5 rounded-3xl h-32 mb-4 outline-none border border-transparent focus:border-red-100 transition-all text-sm resize-none" placeholder="Contoh: Pria berjaket kulit hitam gaya grunge di jalanan London..."></textarea>
@@ -122,7 +116,6 @@
                 </div>
             </div>
 
-            <!-- Chat Page -->
             <div id="tab-chat" class="page hidden max-w-md mx-auto h-[65vh] bg-white rounded-[40px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
                 <div class="p-5 border-b flex items-center justify-between">
                     <span class="font-extrabold text-sm tracking-widest uppercase">Community Chat</span>
@@ -136,7 +129,6 @@
             </div>
         </main>
 
-        <!-- Bottom Navigation -->
         <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-xl px-10 py-4 rounded-full flex items-center gap-10 shadow-[0_20px_50px_rgba(0,0,0,0.1)] z-50 border border-gray-100">
             <button onclick="switchTab('home')" id="nav-home" class="text-gray-400 active-nav hover:scale-110 transition-transform"><i data-lucide="layout-grid"></i></button>
             <label class="bg-[#E60023] w-14 h-14 rounded-[22px] -mt-16 flex items-center justify-center cursor-pointer shadow-xl shadow-red-200 hover:scale-110 transition-all transform active:rotate-12">
@@ -149,7 +141,6 @@
         </nav>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast-hidden fixed bottom-28 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-3 rounded-full text-[10px] font-bold z-[3000] uppercase tracking-[0.2em] shadow-2xl"></div>
 
     <script type="module">
@@ -157,7 +148,6 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Konfigurasi Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAjy-TL1OIZcWoXafKpjjGP45tfbe1B5Sc",
             authDomain: "visiauracl-8339a.firebaseapp.com",
@@ -175,7 +165,6 @@
         const KUSTOM_LOGO = "https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056";
         let allData = [];
 
-        // --- DAFTAR GAMBAR OOTD MANUAL ---
         const DAFTAR_OOTD_MANUAL = [
             { url: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800", tag: "ootd" },
             { url: "https://images.unsplash.com/photo-1529139513055-07f909ef3d5c?q=80&w=800", tag: "street" },
@@ -296,7 +285,6 @@
         function initApp() {
             allData = [...DAFTAR_OOTD_MANUAL];
             
-            // Tambah gambar acak tambahan
             for(let i=0; i<40; i++) {
                 const tag = ['ootd', 'street', 'minimal', 'ai'][i % 4];
                 allData.push({ 
@@ -307,7 +295,6 @@
             
             render(allData);
 
-            // Listen Chat
             onSnapshot(query(collection(db, "aura_chat_v2"), orderBy("createdAt", "asc")), (s) => {
                 const b = document.getElementById('chat-box');
                 if(!b) return;
