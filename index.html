@@ -1,166 +1,170 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisiAura - Image AI Generator</title>
+    <title>VisiAura - Visual Inspirasi Masa Depan</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, where, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBh69vvpiOHQ8ZxxrDh54ciq5GsjZs65Gw",
+            authDomain: "visiaura-github.firebaseapp.com",
+            projectId: "visiaura-github",
+            storageBucket: "visiaura-github.firebasestorage.app",
+            messagingSenderId: "29980718838",
+            appId: "1:29980718838:web:389fca45c55b4fa0e15ed7",
+            measurementId: "G-WVQZMYKP76"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Export ke window agar bisa diakses oleh javascript.js
+        window.fbAuth = auth;
+        window.fbDb = db;
+        window.GoogleAuthProvider = GoogleAuthProvider;
+        window.signInWithPopup = signInWithPopup;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.signOut = signOut;
+        window.googleProvider = new GoogleAuthProvider();
+
+        // Trigger event bahwa Firebase siap
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-white text-gray-900 selection:bg-red-100">
+<body class="bg-white text-gray-900 font-sans overflow-x-hidden">
 
-    <section id="onboarding" class="fixed inset-0 z-[100] bg-white flex items-center justify-center p-6 overflow-hidden">
+    <!-- Screen Onboarding / Login -->
+    <section id="auth-screen" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 overflow-hidden">
         <div id="floating-bg" class="absolute inset-0 pointer-events-none opacity-20"></div>
-        
-        <div class="relative z-10 w-full max-w-sm text-center">
-            <div class="w-24 h-24 bg-[#E60023] rounded-[35px] flex items-center justify-center text-white text-5xl font-black mx-auto mb-8 shadow-2xl italic transform -rotate-3 transition-transform hover:rotate-0 duration-500">V</div>
-            <h1 class="text-4xl font-extrabold tracking-tighter mb-2">VisiAura</h1>
-            <p class="text-gray-400 text-sm font-medium mb-10">Temukan inspirasi estetik harianmu.</p>
 
-            <div class="space-y-4">
-                <button id="google-login" class="w-full py-4 border-2 border-gray-100 rounded-2xl flex items-center justify-center gap-3 font-bold text-sm hover:bg-gray-50 active:scale-95 transition-all">
-                    <img src="https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056" class="w-6 h-6 rounded-full" alt="Google"> 
+        <div class="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-gray-100">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-extrabold tracking-tighter text-[#E60023]">VisiAura</h1>
+                <p class="text-gray-500 mt-2">Temukan aura visualmu sekarang.</p>
+            </div>
+
+            <div id="auth-form-container">
+                <input type="email" id="email" placeholder="Email" class="w-full mb-3 px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#E60023] outline-none transition-all">
+                <input type="password" id="password" placeholder="Kata Sandi" class="w-full mb-6 px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#E60023] outline-none transition-all">
+                
+                <button onclick="handleManualLogin()" class="w-full bg-[#E60023] text-white py-3 rounded-full font-bold hover:bg-[#ad001a] transition-all transform active:scale-95 shadow-lg">Masuk</button>
+                
+                <div class="flex items-center my-6">
+                    <hr class="flex-grow border-gray-200">
+                    <span class="px-3 text-gray-400 text-sm">atau</span>
+                    <hr class="flex-grow border-gray-200">
+                </div>
+
+                <button onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-full font-semibold hover:bg-gray-50 transition-all">
+                    <img src="https://ik.imagekit.io/Kenzo/IMG_20251226_162306.jpg?updatedAt=1766741300056" alt="Google" class="w-6 h-6 rounded-full">
                     Lanjutkan dengan Google
                 </button>
-                <div class="flex items-center gap-4 py-2 text-[10px] font-black text-gray-300 uppercase tracking-widest">
-                    <div class="flex-1 h-[1px] bg-gray-100"></div> atau <div class="flex-1 h-[1px] bg-gray-100"></div>
-                </div>
-                <div class="space-y-3">
-                    <input type="email" placeholder="Email" class="w-full bg-gray-50 p-4 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-100 transition-all border border-transparent focus:border-red-200">
-                    <input type="password" placeholder="Kata Sandi" class="w-full bg-gray-50 p-4 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-100 transition-all border border-transparent focus:border-red-200">
-                    <button class="w-full bg-black text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[2px] shadow-xl active:scale-95 transition-all">Masuk</button>
-                </div>
+                
+                <p class="text-center text-xs text-gray-400 mt-6">Dengan melanjutkan, Anda menyetujui Ketentuan Layanan VisiAura.</p>
             </div>
         </div>
     </section>
 
-    <main id="app-main" class="hidden min-h-screen pb-24 md:pb-0 md:pl-24">
-        
-        <nav class="hidden md:flex fixed left-0 top-0 h-full w-24 flex-col items-center py-8 bg-white border-r border-gray-100 z-50">
-            <div class="w-12 h-12 bg-[#E60023] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-12 italic">V</div>
-            <div class="flex flex-col gap-8 flex-1">
-                <button class="nav-link active" data-view="home"><i data-lucide="home"></i></button>
-                <button class="nav-link" data-view="search"><i data-lucide="search"></i></button>
-                <button class="nav-link" data-view="create"><i data-lucide="plus-circle"></i></button>
-                <button class="nav-link" data-view="chat"><i data-lucide="message-circle"></i></button>
+    <!-- App Shell -->
+    <main id="app-shell" class="hidden opacity-0 transition-opacity duration-500">
+        <!-- Header -->
+        <header class="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 border-b border-gray-50 px-6 py-4 flex items-center gap-6">
+            <div class="text-2xl font-bold text-[#E60023] cursor-pointer" onclick="showSection('home')">V</div>
+            <div class="flex-grow relative">
+                <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl"></i>
+                <input type="text" id="search-input" placeholder="Cari inspirasi Fotografi, OOTD, Interior..." class="w-full bg-gray-100 pl-12 pr-4 py-3 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-200">
             </div>
-            <button class="nav-link" data-view="profile"><i data-lucide="user"></i></button>
-        </nav>
-
-        <header class="sticky top-0 bg-white/80 backdrop-blur-md z-40 px-6 py-4 flex items-center justify-between border-b border-gray-50">
-            <div class="flex items-center gap-4 flex-1">
-                <h1 class="text-2xl font-black text-[#E60023] italic md:hidden">V</h1>
-                <div class="relative w-full max-w-xl">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
-                    <input id="main-search" type="text" placeholder="Cari aura (misal: OOTD, Fotografi)..." class="w-full bg-gray-100 py-3 pl-12 pr-4 rounded-full text-sm outline-none focus:ring-2 focus:ring-red-200 transition-all">
-                </div>
-            </div>
-            <div class="flex items-center gap-4 ml-4">
-                <button class="p-2.5 bg-gray-50 rounded-full text-gray-600 relative">
-                    <i data-lucide="bell" class="w-5 h-5"></i>
-                    <span class="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full border-2 border-white"></span>
+            <div class="flex items-center gap-4 text-2xl text-gray-500">
+                <button class="hover:text-[#E60023] relative" onclick="showToast('Belum ada notifikasi baru', 'info')">
+                    <i class="ph ph-bell"></i>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                 </button>
-                <div class="w-10 h-10 rounded-full overflow-hidden border shadow-sm cursor-pointer" id="profile-trigger">
-                    <img src="https://ui-avatars.com/api/?name=Visi+Aura&background=E60023&color=fff" alt="User">
+                <button class="hover:text-gray-800" onclick="showSection('chat')"><i class="ph ph-chat-circle-dots"></i></button>
+                <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden cursor-pointer border hover:border-[#E60023]" onclick="showSection('profile')">
+                    <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar">
                 </div>
             </div>
         </header>
 
-        <section id="view-home" class="view-content p-6">
-            <div id="masonry-grid" class="masonry-layout">
-            </div>
-        </section>
+        <div id="content-area" class="pt-24 pb-20 px-4 md:px-8">
+            <!-- Home Section -->
+            <section id="section-home" class="block">
+                <div id="masonry-grid" class="columns-2 md:columns-3 lg:columns-5 gap-4"></div>
+            </section>
 
-        <section id="view-create" class="view-content hidden p-6">
-            <div class="max-w-4xl mx-auto bg-black rounded-[40px] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-10 opacity-10"><i data-lucide="sparkles" class="w-32 h-32"></i></div>
-                <div class="relative z-10">
-                    <div class="flex items-center gap-4 mb-10">
-                        <div class="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-red-600/20"><i data-lucide="zap"></i></div>
-                        <div>
-                            <h2 class="text-3xl font-black tracking-tight">Google Veo 3</h2>
-                            <p class="text-[10px] uppercase tracking-[3px] font-bold text-gray-500">Next-Gen Video Generator</p>
+            <!-- Create Section -->
+            <section id="section-create" class="hidden max-w-4xl mx-auto py-10">
+                <div class="glass-panel p-10 rounded-[3rem] text-center border border-white/40 shadow-2xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-3xl font-bold mb-2">Google Veo 3 <span class="text-[#E60023]">AI Video</span></h2>
+                        <p class="text-gray-500 mb-8">Ubah teks menjadi video sinematik 4K secara instan.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <input type="text" id="veo-subject" placeholder="Subjek" class="bg-white/50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#E60023]">
+                            <input type="text" id="veo-motion" placeholder="Gerakan" class="bg-white/50 border border-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#E60023]">
+                            <select id="veo-lighting" class="bg-white/50 border border-gray-100 p-4 rounded-2xl outline-none">
+                                <option>Pencahayaan Sinematik</option>
+                                <option>Golden Hour</option>
+                            </select>
+                            <select id="veo-style" class="bg-white/50 border border-gray-100 p-4 rounded-2xl outline-none">
+                                <option>Realistik</option>
+                                <option>Anime</option>
+                            </select>
                         </div>
-                    </div>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div class="space-y-6">
-                            <div class="glass-input p-6 rounded-[30px] border border-white/10 space-y-4">
-                                <div>
-                                    <label class="text-[9px] font-black uppercase text-gray-500 mb-2 block ml-2">Subjek & Gerakan</label>
-                                    <textarea placeholder="Deskripsikan video..." class="w-full bg-transparent outline-none text-sm h-24 resize-none"></textarea>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="bg-white/5 p-3 rounded-2xl">
-                                        <p class="text-[8px] font-black text-gray-500 uppercase">Pencahayaan</p>
-                                        <select class="bg-transparent text-xs w-full outline-none mt-1 font-bold"><option>Cinematic</option><option>Neon</option></select>
-                                    </div>
-                                    <div class="bg-white/5 p-3 rounded-2xl">
-                                        <p class="text-[8px] font-black text-gray-500 uppercase">Style</p>
-                                        <select class="bg-transparent text-xs w-full outline-none mt-1 font-bold"><option>Minimalis</option><option>Cyber</option></select>
-                                    </div>
-                                </div>
-                            </div>
-                            <button id="generate-veo" class="w-full bg-red-600 hover:bg-red-500 py-5 rounded-[25px] font-black text-xs uppercase tracking-[3px] shadow-xl shadow-red-900/40 transition-all active:scale-95">Mulai Generate</button>
-                        </div>
-                        <div class="relative aspect-[9/16] bg-white/5 rounded-[40px] border border-white/10 flex items-center justify-center overflow-hidden" id="video-preview-container">
-                            <p class="text-xs text-gray-600 italic font-medium">Pratinjau Video</p>
-                        </div>
+                        <button onclick="generateVideo()" class="bg-black text-white px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform flex items-center gap-3 mx-auto shadow-xl">
+                            <i class="ph ph-magic-wand"></i> Generate Video
+                        </button>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="view-chat" class="view-content hidden p-6 max-w-2xl mx-auto h-[80vh]">
-            <div class="bg-gray-50 rounded-[40px] h-full flex flex-col overflow-hidden border border-gray-100 shadow-sm">
-                <div class="p-6 bg-white border-b flex items-center justify-between">
-                    <h3 class="font-bold text-lg">Aura Message</h3>
-                    <div class="flex items-center gap-2"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span><span class="text-[10px] font-bold text-gray-400">AKTIF</span></div>
-                </div>
-                <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar"></div>
-                <div class="p-4 bg-white border-t flex gap-3">
-                    <input id="chat-input" type="text" placeholder="Ketik pesan..." class="flex-1 bg-gray-100 px-6 py-4 rounded-full text-sm outline-none">
-                    <button id="send-btn" class="bg-[#E60023] text-white p-4 rounded-full shadow-lg active:scale-90 transition-all"><i data-lucide="send"></i></button>
-                </div>
-            </div>
-        </section>
-
-        <div id="settings-panel" class="fixed inset-0 z-[110] hidden">
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" id="close-settings"></div>
-            <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[45px] p-8 transform translate-y-full transition-transform duration-500 ease-out" id="settings-content">
-                <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8"></div>
-                <div class="flex items-center gap-6 mb-10">
-                    <div class="w-20 h-20 rounded-[25px] overflow-hidden shadow-xl"><img src="https://ui-avatars.com/api/?name=Visi+Aura&background=E60023&color=fff" class="w-full h-full object-cover"></div>
-                    <div>
-                        <h4 class="text-xl font-extrabold">Visi Aura User</h4>
-                        <p class="text-sm text-gray-400">@visiaura_member</p>
+            <!-- Profile Section -->
+            <section id="section-profile" class="hidden text-center">
+                <div class="mb-8">
+                    <div class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-white shadow-lg overflow-hidden">
+                        <img id="profile-img-large" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full object-cover">
+                    </div>
+                    <h3 id="profile-name" class="text-3xl font-bold">Nama Pengguna</h3>
+                    <p id="profile-email" class="text-gray-400">email@anda.com</p>
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button class="bg-gray-100 px-6 py-2 rounded-full font-semibold hover:bg-gray-200">Edit Profil</button>
+                        <button onclick="handleLogout()" class="bg-red-50 px-6 py-2 rounded-full font-semibold text-[#E60023] hover:bg-red-100">Keluar</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 gap-4 mb-10">
-                    <button class="settings-btn"><i data-lucide="user"></i> Profil Publik</button>
-                    <button class="settings-btn"><i data-lucide="shield"></i> Privasi Akun</button>
-                    <button class="settings-btn"><i data-lucide="bell"></i> Notifikasi</button>
-                    <button class="settings-btn"><i data-lucide="help-circle"></i> Pusat Bantuan</button>
-                    <button class="settings-btn text-blue-600"><i data-lucide="user-plus"></i> Tambah Akun</button>
-                </div>
-                <button id="logout-btn" class="w-full bg-red-50 text-[#E60023] py-5 rounded-[25px] font-black text-xs uppercase tracking-[2px] active:scale-95 transition-all">Log Out</button>
-            </div>
+                <div id="profile-grid" class="columns-2 md:columns-4 gap-4"></div>
+            </section>
         </div>
 
+        <!-- Bottom Nav -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50">
+            <button onclick="showSection('home')" class="text-2xl text-[#E60023]"><i class="ph ph-house"></i></button>
+            <button onclick="document.getElementById('search-input').focus()" class="text-2xl text-gray-400"><i class="ph ph-magnifying-glass"></i></button>
+            <button onclick="showSection('create')" class="text-4xl text-[#E60023] -mt-6 bg-white rounded-full shadow-lg p-2"><i class="ph ph-plus-circle-fill"></i></button>
+            <button onclick="showSection('chat')" class="text-2xl text-gray-400"><i class="ph ph-chat-circle-dots"></i></button>
+            <button onclick="showSection('profile')" class="text-2xl text-gray-400"><i class="ph ph-user"></i></button>
+        </nav>
     </main>
 
-    <nav id="mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-8 py-4 flex justify-between items-center z-50 hidden">
-        <button class="nav-link active" data-view="home"><i data-lucide="home"></i></button>
-        <button class="nav-link" data-view="search"><i data-lucide="search"></i></button>
-        <div class="w-14 h-14 bg-[#E60023] rounded-full flex items-center justify-center text-white shadow-xl -mt-12 border-4 border-white active:scale-90 transition-transform" data-view="create"><i data-lucide="plus"></i></div>
-        <button class="nav-link" data-view="chat"><i data-lucide="message-circle"></i></button>
-        <button class="nav-link" data-view="profile"><i data-lucide="user"></i></button>
-    </nav>
+    <div id="toast-container" class="fixed top-6 right-6 z-[200] space-y-3 pointer-events-none"></div>
 
-    <div id="toast-container" class="fixed top-8 left-1/2 -translate-x-1/2 z-[200] pointer-events-none"></div>
+    <div id="loader-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex flex-col items-center justify-center text-white">
+        <div class="infinity-loop"></div>
+        <p class="mt-6 font-medium tracking-widest text-[#E60023]">AI SEDANG MEMPROSES...</p>
+    </div>
 
-    <script type="module" src="javascript.js"></script>
+    <script src="javascript.js"></script>
 </body>
 </html>
-
