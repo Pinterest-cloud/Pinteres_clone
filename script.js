@@ -64,7 +64,6 @@ function setupEventListeners() {
     };
 
     document.getElementById('generate-veo').onclick = startVeoGeneration;
-
     document.getElementById('send-btn').onclick = sendChatMessage;
     document.getElementById('chat-input').onkeypress = (e) => {
         if(e.key === 'Enter') sendChatMessage();
@@ -76,7 +75,7 @@ function setupEventListeners() {
 
 function initOnboardingAnimation() {
     const container = document.getElementById('floating-bg');
-    for(let i=0; i<30; i++) {
+    for(let i=0; i<15; i++) {
         const card = document.createElement('div');
         card.className = 'floating-card';
         card.style.left = Math.random() * 90 + 'vw';
@@ -250,4 +249,4 @@ function showToast(msg, type = "success") {
     container.appendChild(toast);
     lucide.createIcons();
     setTimeout(() => toast.remove(), 4000);
-          }
+            }
